@@ -1,22 +1,22 @@
-// ============================================
-// Configuración de Supabase
-// ============================================
-// Reemplaza estos valores con los de tu proyecto:
-// Ve a https://supabase.com -> Settings -> API
-// ============================================
-
 const SUPABASE_URL = 'https://mgzqmtcxnwhrcvfxujnw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_BdYoJTpc0IkjCtHoarj6YQ_PVeSJlBt';
 
-// Inicializar cliente Supabase
-const supabase = window.supabase
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const headers = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=minimal',
+};
 
-function getSupabase() {
-  if (!supabase) {
-    alert('Error: Supabase no está configurado. Revisa app/js/supabase.js');
-    return null;
+async function apiFetch(path, options) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: { ...headers, ...(options?.headers || {}) },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error ' + res.status);
   }
-  return supabase;
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : res.text();
 }

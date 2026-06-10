@@ -1,31 +1,15 @@
-// ============================================
-// Operaciones de base de datos (Supabase)
-// ============================================
-
 async function loginUser(username, password) {
   try {
-    const sb = getSupabase();
-    if (!sb) return { ok: false, error: 'Supabase no configurado' };
-
-    const { data, error } = await sb
-      .from('usuarios')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-      .single();
-
-    if (error || !data) {
+    const data = await apiFetch(
+      'usuarios?username=eq.' + encodeURIComponent(username) + '&password=eq.' + encodeURIComponent(password) + '&select=*'
+    );
+    if (!data || data.length === 0) {
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
-
+    const u = data[0];
     return {
       ok: true,
-      user: {
-        username: data.username,
-        name: data.name,
-        role: data.role,
-        barrio: data.barrio,
-      },
+      user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio },
     };
   } catch (err) {
     return { ok: false, error: 'Error de conexión: ' + err.message };
@@ -34,11 +18,7 @@ async function loginUser(username, password) {
 
 async function getRegistros() {
   try {
-    const sb = getSupabase();
-    if (!sb) return [];
-    const { data, error } = await sb.from('registros').select('*').order('id', { ascending: true });
-    if (error) throw error;
-    return data || [];
+    return await apiFetch('registros?order=id.asc&select=*');
   } catch {
     return [];
   }
@@ -46,11 +26,10 @@ async function getRegistros() {
 
 async function saveRegistro(campos) {
   try {
-    const sb = getSupabase();
-    if (!sb) return { ok: false, error: 'Supabase no configurado' };
-
-    const { error } = await sb.from('registros').insert([campos]);
-    if (error) throw error;
+    await apiFetch('registros', {
+      method: 'POST',
+      body: JSON.stringify(campos),
+    });
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message };
@@ -59,15 +38,10 @@ async function saveRegistro(campos) {
 
 async function checkCedulaDuplicada(cedula) {
   try {
-    const sb = getSupabase();
-    if (!sb) return null;
-    const { data, error } = await sb
-      .from('registros')
-      .select('barrio')
-      .eq('cedula', cedula)
-      .maybeSingle();
-    if (error) throw error;
-    return data;
+    const data = await apiFetch(
+      'registros?cedula=eq.' + encodeURIComponent(cedula) + '&select=barrio'
+    );
+    return data && data.length > 0 ? data[0] : null;
   } catch {
     return null;
   }
