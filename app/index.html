@@ -32,10 +32,13 @@
             </div>
         </div>
     </div>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/db.js"></script>
     <script>
         localStorage.removeItem('jac_session');
 
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const msgEl = document.getElementById('msg');
             msgEl.className = 'msg';
@@ -51,31 +54,21 @@
                 return;
             }
 
-            const users = [
-                { username: 'presidente_progreso', password: '123456', name: 'Carlos Martínez', role: 'Presidente', barrio: 'El Progreso' },
-                { username: 'secretario_progreso', password: '123456', name: 'María Gómez', role: 'Secretario', barrio: 'El Progreso' },
-                { username: 'presidente_villa', password: '123456', name: 'Luis Hernández', role: 'Presidente', barrio: 'Villa Nueva' },
-                { username: 'secretario_villa', password: '123456', name: 'Sofía Ramírez', role: 'Secretario', barrio: 'Villa Nueva' },
-                { username: 'presidente_olivos', password: '123456', name: 'Andrés Castillo', role: 'Presidente', barrio: 'Los Olivos' },
-                { username: 'secretario_olivos', password: '123456', name: 'Carolina Pérez', role: 'Secretario', barrio: 'Los Olivos' },
-                { username: 'presidente_florida', password: '123456', name: 'Jorge Medina', role: 'Presidente', barrio: 'La Florida' },
-                { username: 'secretario_florida', password: '123456', name: 'Ana Rodríguez', role: 'Secretario', barrio: 'La Florida' },
-                { username: 'ranceth', password: '123456', name: 'Ranceth', role: 'Presidente', barrio: 'Torices' },
-            ];
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Ingresando...';
 
-            const user = users.find(u => u.username === username && u.password === password);
-            if (user) {
-                localStorage.setItem('jac_session', JSON.stringify({
-                    username: user.username,
-                    name: user.name,
-                    role: user.role,
-                    barrio: user.barrio,
-                }));
+            const result = await loginUser(username, password);
+
+            if (result.ok) {
+                localStorage.setItem('jac_session', JSON.stringify(result.user));
                 window.location.href = 'dashboard.html';
             } else {
-                msgEl.textContent = 'Usuario o contraseña incorrectos';
+                msgEl.textContent = result.error;
                 msgEl.className = 'msg error';
                 msgEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Ingresar';
             }
         });
     </script>

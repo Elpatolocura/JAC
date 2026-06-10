@@ -131,6 +131,9 @@
         </button>
     </nav>
 
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/db.js"></script>
     <script>
         // ===== SESSION =====
         var sessionRole = '';
@@ -195,23 +198,15 @@
                 document.getElementById('pageTitle').textContent = titles[target];
                 if (target === 'tab-consultar') {
                     document.getElementById('buscarCedula').value = '';
-                    renderTable();
+                    renderTable().catch(function () {});
                 }
             });
         });
 
-        // ===== CRUD: localStorage =====
-        function getRegistros() {
-            try { return JSON.parse(localStorage.getItem('jac_registros')) || []; }
-            catch { return []; }
-        }
-
-        function saveRegistros(list) {
-            localStorage.setItem('jac_registros', JSON.stringify(list));
-        }
-
-        function renderTable(filtroCedula) {
-            let list = getRegistros();
+        // ===== CRUD: Supabase =====
+        async function renderTable(filtroCedula) {
+            const all = await getRegistros();
+            let list = all || [];
             const tbody = document.getElementById('tablaRegistros');
             const empty = document.getElementById('emptyState');
             const emptyText = document.getElementById('emptyText');
@@ -226,7 +221,7 @@
             document.getElementById('totalRegistros').textContent =
                 list.length + ' registro' + (list.length !== 1 ? 's' : '');
 
-            if (getRegistros().length === 0) {
+            if (all.length === 0) {
                 tbody.innerHTML = '';
                 empty.style.display = 'block';
                 emptyText.textContent = 'No hay registros aún';
@@ -258,7 +253,7 @@
         // ===== CONSULTAR: búsqueda =====
         function aplicarFiltros() {
             const cedula = document.getElementById('buscarCedula').value.trim();
-            renderTable(cedula || null);
+            renderTable(cedula || null).catch(function () {});
         }
 
         document.getElementById('buscarCedula').addEventListener('input', aplicarFiltros);
@@ -272,7 +267,7 @@
 
 
         // ===== FORMULARIO =====
-        document.getElementById('formInscripcion').addEventListener('submit', function (e) {
+        document.getElementById('formInscripcion').addEventListener('submit', async function (e) {
             e.preventDefault();
             const msg = document.getElementById('formMsg');
             msg.className = 'msg';
@@ -297,8 +292,7 @@
             }
 
             // Validar cédula única en todo el sistema
-            const todos = getRegistros();
-            const duplicado = todos.find(function (r) { return r.cedula === campos.cedula; });
+            const duplicado = await checkCedulaDuplicada(campos.cedula);
             if (duplicado) {
                 msg.textContent = 'Esa cédula ya está registrada en el barrio ' + duplicado.barrio;
                 msg.className = 'msg error';
@@ -312,16 +306,21 @@
                 hoy.getFullYear();
 
             campos.fecha = fecha;
+            campos.created_by = sessionBarrio;
 
-            todos.push(campos);
-            saveRegistros(todos);
+            const result = await saveRegistro(campos);
 
-            msg.textContent = '✅ Inscripción guardada exitosamente en ' + sessionBarrio;
-            msg.className = 'msg success';
-            msg.style.display = 'block';
-
-            this.reset();
-            document.getElementById('barrio').value = sessionBarrio;
+            if (result.ok) {
+                msg.textContent = '✅ Inscripción guardada exitosamente en ' + sessionBarrio;
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                this.reset();
+                document.getElementById('barrio').value = sessionBarrio;
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+            }
 
             setTimeout(function () {
                 msg.style.display = 'none';
@@ -329,10 +328,10 @@
         });
 
         // ===== EXPORTAR =====
-        document.getElementById('btnExportar').addEventListener('click', function () {
+        document.getElementById('btnExportar').addEventListener('click', async function () {
             const cedula = document.getElementById('buscarCedula').value.trim();
-            let list = getRegistros();
-            list = list.filter(function (r) { return r.barrio === sessionBarrio; });
+            const all = await getRegistros();
+            let list = (all || []).filter(function (r) { return r.barrio === sessionBarrio; });
             if (cedula) list = list.filter(function (r) { return r.cedula === cedula; });
             if (list.length === 0) return;
 
@@ -351,7 +350,7 @@
         });
 
         // ===== INIT =====
-        renderTable();
+        renderTable().catch(function () {});
     </script>
 </body>
 </html>

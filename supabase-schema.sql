@@ -1,0 +1,49 @@
+-- ============================================
+-- Esquema Supabase para JAC App
+-- Ejecutar en SQL Editor de Supabase Dashboard
+-- ============================================
+
+-- Tabla de usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+  id BIGSERIAL PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario')),
+  barrio TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabla de registros de inscripción
+CREATE TABLE IF NOT EXISTS registros (
+  id BIGSERIAL PRIMARY KEY,
+  nombres TEXT NOT NULL,
+  apellidos TEXT NOT NULL,
+  cedula TEXT NOT NULL,
+  telefono TEXT NOT NULL,
+  direccion TEXT NOT NULL,
+  barrio TEXT NOT NULL,
+  observacion TEXT DEFAULT '',
+  fecha TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Índice para búsqueda rápida por cédula
+CREATE INDEX IF NOT EXISTS idx_registros_cedula ON registros (cedula);
+
+-- Índice para filtrar por barrio
+CREATE INDEX IF NOT EXISTS idx_registros_barrio ON registros (barrio);
+
+-- Insertar usuarios iniciales
+INSERT INTO usuarios (username, password, name, role, barrio) VALUES
+  ('presidente_progreso', '123456', 'Carlos Martínez', 'Presidente', 'El Progreso'),
+  ('secretario_progreso', '123456', 'María Gómez', 'Secretario', 'El Progreso'),
+  ('presidente_villa', '123456', 'Luis Hernández', 'Presidente', 'Villa Nueva'),
+  ('secretario_villa', '123456', 'Sofía Ramírez', 'Secretario', 'Villa Nueva'),
+  ('presidente_olivos', '123456', 'Andrés Castillo', 'Presidente', 'Los Olivos'),
+  ('secretario_olivos', '123456', 'Carolina Pérez', 'Secretario', 'Los Olivos'),
+  ('presidente_florida', '123456', 'Jorge Medina', 'Presidente', 'La Florida'),
+  ('secretario_florida', '123456', 'Ana Rodríguez', 'Secretario', 'La Florida'),
+  ('ranceth', '123456', 'Ranceth', 'Presidente', 'Torices')
+ON CONFLICT (username) DO NOTHING;
