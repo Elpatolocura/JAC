@@ -50,12 +50,25 @@ async function loginUser(username, password) {
 
 async function changePassword(cedula, newPassword) {
   try {
-    await apiFetch('registros?cedula=eq.' + encodeURIComponent(cedula), {
+    // Intentar con columna password primero
+    const res = await fetch(SUPABASE_URL + '/rest/v1/registros?cedula=eq.' + encodeURIComponent(cedula), {
       method: 'PATCH',
-      headers: { 'Prefer': 'return=minimal' },
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
       body: JSON.stringify({ password: newPassword }),
     });
-    return { ok: true };
+    if (res.ok) return { ok: true };
+
+    // Si falló porque no existe la columna, dar error claro
+    const text = await res.text();
+    if (text.includes('column') && text.includes('password')) {
+      return { ok: false, error: 'Ejecutá en Supabase SQL: ALTER TABLE registros ADD COLUMN password TEXT DEFAULT \'\';' };
+    }
+    return { ok: false, error: text };
   } catch (err) {
     return { ok: false, error: err.message };
   }
@@ -71,10 +84,9 @@ async function getRegistros() {
 
 async function saveRegistro(campos) {
   try {
-    const payload = { ...campos, password: campos.cedula };
     await apiFetch('registros', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(campos),
     });
     return { ok: true };
   } catch (err) {
