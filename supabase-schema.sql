@@ -3,7 +3,7 @@
 -- Ejecutar en SQL Editor de Supabase Dashboard
 -- ============================================
 
--- Tabla de usuarios
+-- Tabla de usuarios (presidentes/secretarios)
 CREATE TABLE IF NOT EXISTS usuarios (
   id BIGSERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
@@ -23,16 +23,16 @@ CREATE TABLE IF NOT EXISTS registros (
   telefono TEXT NOT NULL,
   direccion TEXT NOT NULL,
   barrio TEXT NOT NULL,
+  password TEXT DEFAULT '',
+  role TEXT DEFAULT 'Afiliado',
   observacion TEXT DEFAULT '',
   fecha TEXT NOT NULL,
   created_by TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Índice para búsqueda rápida por cédula
+-- Índices
 CREATE INDEX IF NOT EXISTS idx_registros_cedula ON registros (cedula);
-
--- Índice para filtrar por barrio
 CREATE INDEX IF NOT EXISTS idx_registros_barrio ON registros (barrio);
 
 -- Insertar usuarios iniciales
@@ -47,3 +47,9 @@ INSERT INTO usuarios (username, password, name, role, barrio) VALUES
   ('secretario_florida', '123456', 'Ana Rodríguez', 'Secretario', 'La Florida'),
   ('ranceth', '123456', 'Ranceth', 'Presidente', 'Torices')
 ON CONFLICT (username) DO NOTHING;
+
+-- ============================================
+-- Migración: agregar columnas a registros
+-- ============================================
+ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
+ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';

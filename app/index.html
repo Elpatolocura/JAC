@@ -60,7 +60,8 @@
             const result = await loginUser(username, password);
 
             if (result.ok) {
-                localStorage.setItem('jac_session', JSON.stringify(result.user));
+                const session = { ...result.user, mustChangePassword: result.mustChangePassword };
+                localStorage.setItem('jac_session', JSON.stringify(session));
                 window.location.href = 'dashboard.html';
             } else {
                 msgEl.textContent = result.error;
