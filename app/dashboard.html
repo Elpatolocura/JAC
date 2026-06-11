@@ -190,7 +190,7 @@
       </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/db.js"></script>
     <script>
@@ -496,79 +496,84 @@
 
         document.getElementById('btnGenerarCert').addEventListener('click', function () {
             if (!certDataCache) return;
-            const p = certDataCache;
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'letter');
-            const pageW = 216;
-            const margin = 20;
-            const contentW = pageW - margin * 2;
-            let y = margin;
+            try {
+                const p = certDataCache;
+                if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+                    alert('Error: La librería jsPDF no se cargó. Recargá la página e intentá de nuevo.');
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageW = 210;
+                const margin = 20;
+                const contentW = pageW - margin * 2;
+                let y = margin;
 
-            function ctr(text, size, style) {
-                doc.setFont('helvetica', style || 'normal');
-                doc.setFontSize(size || 12);
-                doc.text(text, pageW / 2, y, { align: 'center' });
-                y += (size || 12) * 0.5;
-            }
+                function ctr(text, size, style) {
+                    doc.setFont('helvetica', style || 'normal');
+                    doc.setFontSize(size || 12);
+                    doc.text(text, pageW / 2, y, { align: 'center' });
+                    y += (size || 12) * 0.5;
+                }
 
-            function line(text, size, style) {
-                doc.setFont('helvetica', style || 'normal');
-                doc.setFontSize(size || 11);
-                doc.text(text, margin, y);
-                y += (size || 11) * 0.55;
-            }
+                function line(text, size, style) {
+                    doc.setFont('helvetica', style || 'normal');
+                    doc.setFontSize(size || 11);
+                    doc.text(text, margin, y);
+                    y += (size || 11) * 0.55;
+                }
 
-            function hr() {
-                y += 4;
-                doc.setDrawColor(0);
-                doc.line(margin, y, pageW - margin, y);
+                function hr() {
+                    y += 4;
+                    doc.setDrawColor(0);
+                    doc.line(margin, y, pageW - margin, y);
+                    y += 6;
+                }
+
+                ctr('JUNTA DE ACCIÓN COMUNAL', 16, 'bold');
+                ctr('Certificado de Vivienda', 13, 'normal');
+                hr();
+
+                line('CERTIFICADO N°: JAC-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000), 11, 'bold');
+                line('Fecha de emisión: ' + new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }), 10);
                 y += 6;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                const texto = 'El Secretario de la Junta de Acción Comunal del barrio ' + p.barrio + ',';
+                doc.text(texto, margin, y);
+                y += 7;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.text('C E R T I F I C A:', margin, y);
+                y += 9;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                const body = 'Que el(la) señor(a) ' + p.nombres.toUpperCase() + ' ' + p.apellidos.toUpperCase() +
+                    ', identificado(a) con cédula de ciudadanía No. ' + p.cedula +
+                    ', reside en la dirección ' + (p.direccion || 'NO REGISTRA') +
+                    ', en el barrio ' + p.barrio + ' de esta localidad.';
+                const lines = doc.splitTextToSize(body, contentW);
+                doc.text(lines, margin, y);
+                y += lines.length * 7 + 4;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.text('El presente certificado se expide a solicitud del interesado a los ' +
+                    new Date().getDate() + ' días del mes de ' +
+                    new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) + '.', margin, y);
+                y += 20;
+
+                ctr('____________________________________', 11);
+                ctr(sessionName.toUpperCase(), 11, 'bold');
+                ctr('Secretario(a) JAC - Barrio ' + p.barrio, 10);
+
+                doc.save('certificado_vivienda_' + p.cedula + '.pdf');
+            } catch (err) {
+                alert('Error al generar el PDF: ' + err.message);
             }
-
-            // === Encabezado ===
-            ctr('JUNTA DE ACCIÓN COMUNAL', 16, 'bold');
-            ctr('Certificado de Vivienda', 13, 'normal');
-            hr();
-
-            line('CERTIFICADO N°: JAC-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000), 11, 'bold');
-            line('Fecha de emisión: ' + new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }), 10);
-            y += 6;
-
-            // === Cuerpo ===
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            const texto = 'El Secretario de la Junta de Acción Comunal del barrio ' + p.barrio + ',';
-            doc.text(texto, margin, y);
-            y += 7;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.text('C E R T I F I C A:', margin, y);
-            y += 9;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            const body = 'Que el(la) señor(a) ' + p.nombres.toUpperCase() + ' ' + p.apellidos.toUpperCase() +
-                ', identificado(a) con cédula de ciudadanía No. ' + p.cedula +
-                ', reside en la dirección ' + (p.direccion || 'NO REGISTRA') +
-                ', en el barrio ' + p.barrio + ' de esta localidad.';
-            const lines = doc.splitTextToSize(body, contentW);
-            doc.text(lines, margin, y);
-            y += lines.length * 6 + 4;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.text('El presente certificado se expide a solicitud del interesado a los ' +
-                new Date().getDate() + ' días del mes de ' +
-                new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) + '.', margin, y);
-            y += 16;
-
-            // === Firma ===
-            ctr('____________________________________', 11);
-            ctr(sessionName.toUpperCase(), 11, 'bold');
-            ctr('Secretario(a) JAC - Barrio ' + p.barrio, 10);
-
-            doc.save('certificado_vivienda_' + p.cedula + '.pdf');
         });
 
         // ===== EXPORTAR =====
