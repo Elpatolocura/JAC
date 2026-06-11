@@ -52,5 +52,7 @@ ON CONFLICT (username) DO NOTHING;
 -- Migraciones (ejecutar si ya existen las tablas)
 -- ============================================
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cedula TEXT DEFAULT '';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT TRUE;
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';
+ALTER TABLE registros ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT TRUE;

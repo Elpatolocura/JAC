@@ -8,9 +8,9 @@ async function loginUser(username, password) {
       const u = data[0];
       const cedula = u.cedula || '';
       const storedPass = u.password || '';
+      const cambioReq = u.cambio_requerido !== false;
 
-      // Si la contraseña coincide con la cédula -> debe cambiar
-      if (password === cedula && cedula !== '') {
+      if (password === cedula && cedula !== '' && cambioReq) {
         return {
           ok: true,
           user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio, cedula: cedula },
@@ -18,7 +18,6 @@ async function loginUser(username, password) {
         };
       }
 
-      // Si la contraseña coincide con la almacenada -> login normal
       if (password === storedPass) {
         return {
           ok: true,
@@ -40,12 +39,13 @@ async function loginUser(username, password) {
 
     const r = data[0];
     const storedPassword = r.password || r.cedula;
+    const cambioReq = r.cambio_requerido !== false;
 
     if (password !== storedPassword && password !== r.cedula) {
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
 
-    const mustChange = password === r.cedula || !r.password;
+    const mustChange = (password === r.cedula || !r.password) && cambioReq;
 
     return {
       ok: true,
@@ -77,12 +77,12 @@ async function changePassword(cedulaOrUsername, newPassword, isUsuario) {
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal',
       },
-      body: JSON.stringify({ password: newPassword }),
+      body: JSON.stringify({ password: newPassword, cambio_requerido: false }),
     });
     if (res.ok) return { ok: true };
     const text = await res.text();
-    if (text.includes('column') && text.includes('password')) {
-      return { ok: false, error: 'Ejecutá en Supabase SQL: ALTER TABLE ' + table + ' ADD COLUMN password TEXT DEFAULT \'\';' };
+    if (text.includes('column') && (text.includes('password') || text.includes('cambio_requerido'))) {
+      return { ok: false, error: 'Ejecutá en Supabase SQL: ALTER TABLE ' + table + ' ADD COLUMN cambio_requerido BOOLEAN DEFAULT TRUE;' };
     }
     return { ok: false, error: text };
   } catch (err) {
