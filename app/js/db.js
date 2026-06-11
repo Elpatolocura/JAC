@@ -1,19 +1,36 @@
 async function loginUser(username, password) {
   try {
-    // Buscar primero en usuarios (presidentes/secretarios)
+    // Buscar por username en usuarios
     let data = await apiFetch(
-      'usuarios?username=eq.' + encodeURIComponent(username) + '&password=eq.' + encodeURIComponent(password) + '&select=*'
+      'usuarios?username=eq.' + encodeURIComponent(username) + '&select=*'
     );
     if (data && data.length > 0) {
       const u = data[0];
-      return {
-        ok: true,
-        user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio },
-        mustChangePassword: false,
-      };
+      const cedula = u.cedula || '';
+      const storedPass = u.password || '';
+
+      // Si la contraseña coincide con la cédula -> debe cambiar
+      if (password === cedula && cedula !== '') {
+        return {
+          ok: true,
+          user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio, cedula: cedula },
+          mustChangePassword: true,
+        };
+      }
+
+      // Si la contraseña coincide con la almacenada -> login normal
+      if (password === storedPass) {
+        return {
+          ok: true,
+          user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio, cedula: cedula },
+          mustChangePassword: false,
+        };
+      }
+
+      return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
 
-    // Si no, buscar por cédula en registros
+    // Si no, buscar por cédula en registros (afiliados)
     data = await apiFetch(
       'registros?cedula=eq.' + encodeURIComponent(username) + '&select=*'
     );
@@ -22,8 +39,6 @@ async function loginUser(username, password) {
     }
 
     const r = data[0];
-
-    // Si no tiene contraseña guardada, se asigna la cédula como default
     const storedPassword = r.password || r.cedula;
 
     if (password !== storedPassword && password !== r.cedula) {
@@ -40,6 +55,7 @@ async function loginUser(username, password) {
         role: r.role || 'Afiliado',
         barrio: r.barrio,
         registroId: r.id,
+        cedula: r.cedula,
       },
       mustChangePassword: mustChange,
     };
@@ -48,10 +64,12 @@ async function loginUser(username, password) {
   }
 }
 
-async function changePassword(cedula, newPassword) {
+async function changePassword(cedulaOrUsername, newPassword, isUsuario) {
   try {
-    // Intentar con columna password primero
-    const res = await fetch(SUPABASE_URL + '/rest/v1/registros?cedula=eq.' + encodeURIComponent(cedula), {
+    const table = isUsuario ? 'usuarios' : 'registros';
+    const field = isUsuario ? 'username' : 'cedula';
+    const url = SUPABASE_URL + '/rest/v1/' + table + '?' + field + '=eq.' + encodeURIComponent(cedulaOrUsername);
+    const res = await fetch(url, {
       method: 'PATCH',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -62,11 +80,9 @@ async function changePassword(cedula, newPassword) {
       body: JSON.stringify({ password: newPassword }),
     });
     if (res.ok) return { ok: true };
-
-    // Si falló porque no existe la columna, dar error claro
     const text = await res.text();
     if (text.includes('column') && text.includes('password')) {
-      return { ok: false, error: 'Ejecutá en Supabase SQL: ALTER TABLE registros ADD COLUMN password TEXT DEFAULT \'\';' };
+      return { ok: false, error: 'Ejecutá en Supabase SQL: ALTER TABLE ' + table + ' ADD COLUMN password TEXT DEFAULT \'\';' };
     }
     return { ok: false, error: text };
   } catch (err) {

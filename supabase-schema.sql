@@ -1,6 +1,5 @@
 -- ============================================
 -- Esquema Supabase para JAC App
--- Ejecutar en SQL Editor de Supabase Dashboard
 -- ============================================
 
 -- Tabla de usuarios (presidentes/secretarios)
@@ -8,6 +7,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   id BIGSERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
+  cedula TEXT DEFAULT '',
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario')),
   barrio TEXT NOT NULL,
@@ -35,21 +35,22 @@ CREATE TABLE IF NOT EXISTS registros (
 CREATE INDEX IF NOT EXISTS idx_registros_cedula ON registros (cedula);
 CREATE INDEX IF NOT EXISTS idx_registros_barrio ON registros (barrio);
 
--- Insertar usuarios iniciales
-INSERT INTO usuarios (username, password, name, role, barrio) VALUES
-  ('presidente_progreso', '123456', 'Carlos Martínez', 'Presidente', 'El Progreso'),
-  ('secretario_progreso', '123456', 'María Gómez', 'Secretario', 'El Progreso'),
-  ('presidente_villa', '123456', 'Luis Hernández', 'Presidente', 'Villa Nueva'),
-  ('secretario_villa', '123456', 'Sofía Ramírez', 'Secretario', 'Villa Nueva'),
-  ('presidente_olivos', '123456', 'Andrés Castillo', 'Presidente', 'Los Olivos'),
-  ('secretario_olivos', '123456', 'Carolina Pérez', 'Secretario', 'Los Olivos'),
-  ('presidente_florida', '123456', 'Jorge Medina', 'Presidente', 'La Florida'),
-  ('secretario_florida', '123456', 'Ana Rodríguez', 'Secretario', 'La Florida'),
-  ('ranceth', '123456', 'Ranceth', 'Presidente', 'Torices')
+-- Insertar usuarios iniciales (password = su propia cédula = forzará cambio)
+INSERT INTO usuarios (username, password, cedula, name, role, barrio) VALUES
+  ('presidente_progreso', '123456', '123456', 'Carlos Martínez', 'Presidente', 'El Progreso'),
+  ('secretario_progreso', '123456', '123456', 'María Gómez', 'Secretario', 'El Progreso'),
+  ('presidente_villa', '123456', '123456', 'Luis Hernández', 'Presidente', 'Villa Nueva'),
+  ('secretario_villa', '123456', '123456', 'Sofía Ramírez', 'Secretario', 'Villa Nueva'),
+  ('presidente_olivos', '123456', '123456', 'Andrés Castillo', 'Presidente', 'Los Olivos'),
+  ('secretario_olivos', '123456', '123456', 'Carolina Pérez', 'Secretario', 'Los Olivos'),
+  ('presidente_florida', '123456', '123456', 'Jorge Medina', 'Presidente', 'La Florida'),
+  ('secretario_florida', '123456', '123456', 'Ana Rodríguez', 'Secretario', 'La Florida'),
+  ('ranceth', '123456', '123456', 'Ranceth', 'Presidente', 'Torices')
 ON CONFLICT (username) DO NOTHING;
 
 -- ============================================
--- Migración: agregar columnas a registros
+-- Migraciones (ejecutar si ya existen las tablas)
 -- ============================================
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cedula TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';

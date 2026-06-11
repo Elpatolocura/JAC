@@ -177,6 +177,20 @@
             // Mostrar modal si debe cambiar contraseña
             if (session.mustChangePassword) {
               document.getElementById('modalPassword').style.display = 'flex';
+              // Sonido de notificación
+              try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+              } catch (e) {}
             }
 
             // Auto-asignar barrio del usuario en el formulario
@@ -238,7 +252,9 @@
             btn.disabled = true;
             btn.textContent = 'Guardando...';
 
-            const result = await changePassword(sessionUsername, newPass);
+            const isUsuario = !sessionRegistroId;
+            const identifier = isUsuario ? sessionUsername : sessionUsername;
+            const result = await changePassword(identifier, newPass, isUsuario);
 
             if (result.ok) {
                 msg.textContent = '✅ Contraseña cambiada exitosamente';
