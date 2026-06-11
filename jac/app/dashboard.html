@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAC - Sistema</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-body">
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-logo">J</div>
+            <h3>JAC - <span id="pageTitle">Inscripción</span></h3>
+        </div>
+        <div class="topbar-right">
+            <span class="user-name" id="userName">Usuario</span>
+            <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">🚪</button>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- TAB 1: Formulario de Inscripción -->
+        <section class="page active" id="tab-inscripcion">
+            <div class="card">
+                <div class="card-title">📝 Formulario de Inscripción</div>
+                <form id="formInscripcion">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombres">Nombres</label>
+                            <input type="text" id="nombres" placeholder="Nombres completos" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="apellidos">Apellidos</label>
+                            <input type="text" id="apellidos" placeholder="Apellidos completos" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cedula">N° Cédula</label>
+                            <input type="text" id="cedula" placeholder="Sin puntos ni guiones" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono">Teléfono</label>
+                            <input type="tel" id="telefono" placeholder="Ej: 3001234567" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" placeholder="Dirección de residencia" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="barrio">Barrio</label>
+                        <select id="barrio" required>
+                            <option value="">Seleccione un barrio</option>
+                            <option value="El Progreso">El Progreso</option>
+                            <option value="Villa Nueva">Villa Nueva</option>
+                            <option value="Los Olivos">Los Olivos</option>
+                            <option value="San Fernando">San Fernando</option>
+                            <option value="La Florida">La Florida</option>
+                            <option value="El Carmen">El Carmen</option>
+                            <option value="Bella Vista">Bella Vista</option>
+                            <option value="Centro">Centro</option>
+                            <option value="La Esperanza">La Esperanza</option>
+                            <option value="Ciudad Jardín">Ciudad Jardín</option>
+                            <option value="Torices">Torices</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="observacion">Observación</label>
+                        <textarea id="observacion" placeholder="Información adicional (opcional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">💾 Guardar Inscripción</button>
+                    <div class="msg" id="formMsg"></div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 2: Consultar Registros -->
+        <section class="page" id="tab-consultar">
+            <div class="card">
+                <div class="card-title">🔍 Consultar Registros</div>
+                <div class="form-group" style="margin:0;">
+                    <label for="buscarCedula">Buscar por N° Cédula</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="buscarCedula" placeholder="Ej: 1234567" style="flex:1;">
+                        <button class="btn-primary" id="btnLimpiarBusqueda" style="width:auto;padding:8px 16px;font-size:0.85rem;margin:0;">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>📋 Resultados <span id="totalRegistros" style="font-weight:400;color:var(--text-muted);font-size:0.85rem;"></span></h4>
+                    <button class="btn-primary" id="btnExportar" style="width:auto;padding:8px 20px;font-size:0.85rem;margin:0;">📥 Exportar</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombres</th>
+                                <th>Apellidos</th>
+                                <th>Cédula</th>
+                                <th>Teléfono</th>
+                                <th>Dirección</th>
+                                <th>Barrio</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaRegistros">
+                        </tbody>
+                    </table>
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">📭</div>
+                        <p id="emptyText">No hay registros aún</p>
+                        <p style="font-size:0.85rem;margin-top:4px;">Usa la pestaña "Inscripción" para agregar el primero.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <nav class="tab-bar" id="tabBar">
+        <button class="tab-item" data-tab="tab-inscripcion" id="tabBtnInscripcion">
+            <span class="tab-icon">📝</span>
+            <span class="tab-label">Inscripción</span>
+        </button>
+        <button class="tab-item" data-tab="tab-consultar">
+            <span class="tab-icon">📋</span>
+            <span class="tab-label">Consultar</span>
+        </button>
+    </nav>
+
+    <!-- Modal cambio de contraseña -->
+    <div id="modalPassword" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;">
+        <div style="font-size:2rem;text-align:center;margin-bottom:8px;">🔐</div>
+        <h3 style="text-align:center;margin-bottom:4px;">Cambiar contraseña</h3>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">Es tu primer inicio de sesión. Cambiá tu contraseña por una nueva.</p>
+        <form id="formCambioPassword">
+          <div class="form-group">
+            <label for="newPassword">Nueva contraseña</label>
+            <input type="password" id="newPassword" placeholder="Minimo 4 caracteres" required minlength="4">
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar contraseña</label>
+            <input type="password" id="confirmPassword" placeholder="Repetí la contraseña" required>
+          </div>
+          <button type="submit" class="btn-primary">Guardar contraseña</button>
+          <div class="msg" id="modalMsg"></div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/db.js"></script>
+    <script>
+        // ===== SESSION =====
+        var sessionRole = '';
+        var sessionBarrio = '';
+        var sessionUsername = '';
+        var sessionRegistroId = '';
+        (function () {
+            const sessionData = localStorage.getItem('jac_session');
+            if (!sessionData || !sessionData.includes('barrio')) {
+                localStorage.removeItem('jac_session');
+                window.location.href = 'index.html';
+                return;
+            }
+            const session = JSON.parse(sessionData);
+            document.getElementById('userName').textContent = session.name;
+            sessionRole = session.role;
+            sessionBarrio = session.barrio;
+            sessionUsername = session.username || '';
+            sessionRegistroId = session.registroId || '';
+
+            // Mostrar modal si debe cambiar contraseña
+            if (session.mustChangePassword) {
+              document.getElementById('modalPassword').style.display = 'flex';
+              // Sonido de notificación
+              try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+              } catch (e) {}
+            }
+
+            // Auto-asignar barrio del usuario en el formulario
+            const barrioSelect = document.getElementById('barrio');
+            barrioSelect.value = sessionBarrio;
+            barrioSelect.disabled = true;
+            barrioSelect.style.opacity = '0.7';
+            barrioSelect.title = 'Barrio asignado: ' + sessionBarrio;
+
+            // Restringir según rol
+            if (sessionRole === 'Presidente') {
+                document.getElementById('tabBtnInscripcion').style.display = 'none';
+                document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
+                document.getElementById('tab-inscripcion').classList.remove('active');
+                document.getElementById('tab-consultar').classList.add('active');
+                document.getElementById('pageTitle').textContent = 'Consultar';
+                document.getElementById('buscarCedula').value = '';
+            } else {
+                document.querySelector('.tab-item[data-tab="tab-inscripcion"]').classList.add('active');
+            }
+        })();
+
+        // ===== LOGOUT =====
+        document.getElementById('logoutBtn').addEventListener('click', function () {
+            localStorage.removeItem('jac_session');
+            window.location.href = 'index.html';
+        });
+
+        // ===== CAMBIO DE CONTRASEÑA =====
+        document.getElementById('formCambioPassword').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msg = document.getElementById('modalMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            const newPass = document.getElementById('newPassword').value.trim();
+            const confirmPass = document.getElementById('confirmPassword').value.trim();
+
+            if (newPass.length < 4) {
+                msg.textContent = 'La contraseña debe tener al menos 4 caracteres';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            if (newPass !== confirmPass) {
+                msg.textContent = 'Las contraseñas no coinciden';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            if (newPass === sessionUsername) {
+                msg.textContent = 'La nueva contraseña no puede ser igual a tu cédula';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            const isUsuario = !sessionRegistroId;
+            const identifier = isUsuario ? sessionUsername : sessionUsername;
+            const result = await changePassword(identifier, newPass, isUsuario);
+
+            if (result.ok) {
+                msg.textContent = '✅ Contraseña cambiada exitosamente';
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                setTimeout(function () {
+                    document.getElementById('modalPassword').style.display = 'none';
+                    const session = JSON.parse(localStorage.getItem('jac_session'));
+                    session.mustChangePassword = false;
+                    localStorage.setItem('jac_session', JSON.stringify(session));
+                }, 1500);
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Guardar contraseña';
+            }
+        });
+
+        // ===== TABS =====
+        const tabItems = document.querySelectorAll('.tab-item');
+        const pages = {
+            'tab-inscripcion': document.getElementById('tab-inscripcion'),
+            'tab-consultar': document.getElementById('tab-consultar'),
+        };
+        const titles = {
+            'tab-inscripcion': 'Inscripción',
+            'tab-consultar': 'Consultar',
+        };
+
+        tabItems.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                tabItems.forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                const target = this.getAttribute('data-tab');
+                Object.keys(pages).forEach(function (k) {
+                    pages[k].classList.toggle('active', k === target);
+                });
+                document.getElementById('pageTitle').textContent = titles[target];
+                if (target === 'tab-consultar') {
+                    document.getElementById('buscarCedula').value = '';
+                    renderTable().catch(function () {});
+                }
+            });
+        });
+
+        // ===== CRUD: Supabase =====
+        async function renderTable(filtroCedula) {
+            const all = await getRegistros();
+            let list = all || [];
+            const tbody = document.getElementById('tablaRegistros');
+            const empty = document.getElementById('emptyState');
+            const emptyText = document.getElementById('emptyText');
+
+            // Siempre filtrar por el barrio del usuario
+            list = list.filter(function (r) { return r.barrio === sessionBarrio; });
+
+            if (filtroCedula) {
+                list = list.filter(function (r) { return r.cedula === filtroCedula; });
+            }
+
+            document.getElementById('totalRegistros').textContent =
+                list.length + ' registro' + (list.length !== 1 ? 's' : '');
+
+            if (all.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                emptyText.textContent = 'No hay registros aún';
+                return;
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                emptyText.textContent = 'No se encontraron registros con ese filtro';
+                return;
+            }
+            empty.style.display = 'none';
+
+            tbody.innerHTML = list.map(function (r, i) {
+                return '<tr>' +
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td>' + r.nombres + '</td>' +
+                    '<td>' + r.apellidos + '</td>' +
+                    '<td>' + r.cedula + '</td>' +
+                    '<td>' + r.telefono + '</td>' +
+                    '<td>' + r.direccion + '</td>' +
+                    '<td>' + r.barrio + '</td>' +
+                    '<td>' + r.fecha + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        // ===== CONSULTAR: búsqueda =====
+        function aplicarFiltros() {
+            const cedula = document.getElementById('buscarCedula').value.trim();
+            renderTable(cedula || null).catch(function () {});
+        }
+
+        document.getElementById('buscarCedula').addEventListener('input', aplicarFiltros);
+
+        document.getElementById('btnLimpiarBusqueda').addEventListener('click', function () {
+            document.getElementById('buscarCedula').value = '';
+            aplicarFiltros();
+            document.getElementById('buscarCedula').focus();
+        });
+
+
+
+        // ===== FORMULARIO =====
+        document.getElementById('formInscripcion').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msg = document.getElementById('formMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            const campos = {
+                nombres: document.getElementById('nombres').value.trim(),
+                apellidos: document.getElementById('apellidos').value.trim(),
+                cedula: document.getElementById('cedula').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                direccion: document.getElementById('direccion').value.trim(),
+                barrio: sessionBarrio,
+                observacion: document.getElementById('observacion').value.trim(),
+            };
+
+            if (!campos.nombres || !campos.apellidos || !campos.cedula ||
+                !campos.telefono || !campos.direccion) {
+                msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            // Validar cédula única en todo el sistema
+            const duplicado = await checkCedulaDuplicada(campos.cedula);
+            if (duplicado) {
+                msg.textContent = 'Esa cédula ya está registrada en el barrio ' + duplicado.barrio;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            const hoy = new Date();
+            const fecha = hoy.getDate().toString().padStart(2, '0') + '/' +
+                (hoy.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                hoy.getFullYear();
+
+            campos.fecha = fecha;
+            campos.created_by = sessionBarrio;
+
+            const result = await saveRegistro(campos);
+
+            if (result.ok) {
+                msg.textContent = '✅ Inscripción guardada exitosamente en ' + sessionBarrio;
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                this.reset();
+                document.getElementById('barrio').value = sessionBarrio;
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+            }
+
+            setTimeout(function () {
+                msg.style.display = 'none';
+            }, 3000);
+        });
+
+        // ===== EXPORTAR =====
+        document.getElementById('btnExportar').addEventListener('click', async function () {
+            const cedula = document.getElementById('buscarCedula').value.trim();
+            const all = await getRegistros();
+            let list = (all || []).filter(function (r) { return r.barrio === sessionBarrio; });
+            if (cedula) list = list.filter(function (r) { return r.cedula === cedula; });
+            if (list.length === 0) return;
+
+            const encabezado = 'Nombres,Apellidos,Cédula,Teléfono,Dirección,Barrio,Observación,Fecha';
+            const filas = list.map(function (r) {
+                return '"' + r.nombres + '","' + r.apellidos + '","' + r.cedula + '","' +
+                    r.telefono + '","' + r.direccion + '","' + r.barrio + '","' +
+                    (r.observacion || '') + '","' + r.fecha + '"';
+            }).join('\n');
+
+            const blob = new Blob(['\uFEFF' + encabezado + '\n' + filas], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'registros_jac_' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+        });
+
+        // ===== INIT =====
+        renderTable().catch(function () {});
+    </script>
+</body>
+</html>
