@@ -92,6 +92,18 @@ async function changePassword(cedulaOrUsername, newPassword, isUsuario) {
 
 async function registerUser(campos) {
   try {
+    // Validar código de registro
+    const codigos = await apiFetch(
+      'codigos_registro?codigo=eq.' + encodeURIComponent(campos.codigo) + '&select=*'
+    );
+    if (!codigos || codigos.length === 0) {
+      return { ok: false, error: 'Código de registro inválido' };
+    }
+    const codigoData = codigos[0];
+    if (codigoData.usado) {
+      return { ok: false, error: 'Este código de registro ya fue utilizado' };
+    }
+
     // Verificar si el usuario ya existe
     const existentes = await apiFetch(
       'usuarios?username=eq.' + encodeURIComponent(campos.username) + '&select=id'
@@ -99,6 +111,8 @@ async function registerUser(campos) {
     if (existentes && existentes.length > 0) {
       return { ok: false, error: 'El nombre de usuario ya está en uso' };
     }
+
+    // Crear usuario
     await apiFetch('usuarios', {
       method: 'POST',
       body: JSON.stringify({
@@ -111,6 +125,14 @@ async function registerUser(campos) {
         cambio_requerido: campos.cedula ? true : false,
       }),
     });
+
+    // Marcar código como usado
+    await apiFetch('codigos_registro?codigo=eq.' + encodeURIComponent(campos.codigo), {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ usado: true, usado_por: campos.username }),
+    });
+
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message };

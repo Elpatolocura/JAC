@@ -55,6 +55,10 @@
             <input type="text" id="regCedula" placeholder="Cédula del usuario">
           </div>
           <div class="form-group">
+            <label for="regCodigo">Código de registro</label>
+            <input type="text" id="regCodigo" placeholder="Código proporcionado por el administrador" required>
+          </div>
+          <div class="form-group">
             <label for="regName">Nombre completo</label>
             <input type="text" id="regName" placeholder="Nombre y apellidos" required>
           </div>
@@ -149,12 +153,13 @@
                 username: document.getElementById('regUsername').value.trim(),
                 password: document.getElementById('regPassword').value.trim(),
                 cedula: document.getElementById('regCedula').value.trim(),
+                codigo: document.getElementById('regCodigo').value.trim(),
                 name: document.getElementById('regName').value.trim(),
                 role: document.getElementById('regRole').value,
                 barrio: document.getElementById('regBarrio').value,
             };
 
-            if (!campos.username || !campos.password || !campos.name || !campos.role || !campos.barrio) {
+            if (!campos.username || !campos.password || !campos.codigo || !campos.name || !campos.role || !campos.barrio) {
                 msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
                 msg.className = 'msg error';
                 msg.style.display = 'block';

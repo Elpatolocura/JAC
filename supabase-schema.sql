@@ -56,3 +56,26 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT T
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT TRUE;
+
+-- Tabla de códigos de registro (admin los genera)
+CREATE TABLE IF NOT EXISTS codigos_registro (
+  id BIGSERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE NOT NULL,
+  usado BOOLEAN DEFAULT FALSE,
+  usado_por TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insertar códigos de ejemplo (el admin puede agregar más)
+INSERT INTO codigos_registro (codigo) VALUES
+  ('JAC2026'),
+  ('ADMIN001'),
+  ('SECRET123')
+ON CONFLICT (codigo) DO NOTHING;
+
+-- Políticas RLS para codigos_registro
+ALTER TABLE codigos_registro ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_select_codigos ON codigos_registro;
+CREATE POLICY anon_select_codigos ON codigos_registro FOR SELECT USING (true);
+DROP POLICY IF EXISTS anon_update_codigos ON codigos_registro;
+CREATE POLICY anon_update_codigos ON codigos_registro FOR UPDATE USING (true);
