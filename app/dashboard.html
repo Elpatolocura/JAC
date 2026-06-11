@@ -14,6 +14,7 @@
         </div>
         <div class="topbar-right">
             <span class="user-name" id="userName">Usuario</span>
+            <button class="logout-btn" id="btnCambiarPassTop" title="Cambiar contraseña" style="font-size:1.1rem;">🔑</button>
             <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">🚪</button>
         </div>
     </header>
@@ -119,6 +120,37 @@
                 </div>
             </div>
         </section>
+
+        <!-- TAB 3: Certificados -->
+        <section class="page" id="tab-certificados">
+            <div class="card">
+                <div class="card-title">📜 Certificado de Vivienda</div>
+                <div class="form-group" style="margin:0;">
+                    <label for="certCedula">N° Cédula del afiliado</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="certCedula" placeholder="Ej: 1234567" style="flex:1;">
+                        <button class="btn-primary" id="btnConsultarCert" style="width:auto;padding:8px 16px;font-size:0.85rem;margin:0;">🔍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="certResultado" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>📋 Datos del afiliado</h4>
+                        <button class="btn-primary" id="btnGenerarCert" style="width:auto;padding:8px 20px;font-size:0.85rem;margin:0;">📄 Generar PDF</button>
+                    </div>
+                    <div id="certData" style="padding:12px 0;"></div>
+                </div>
+            </div>
+
+            <div class="card" id="certNoResultado" style="display:none;">
+                <div class="empty-state">
+                    <div class="empty-icon">👤</div>
+                    <p>No se encontró ningún afiliado con esa cédula en tu barrio</p>
+                </div>
+            </div>
+        </section>
     </div>
 
     <nav class="tab-bar" id="tabBar">
@@ -130,14 +162,19 @@
             <span class="tab-icon">📋</span>
             <span class="tab-label">Consultar</span>
         </button>
+        <button class="tab-item" data-tab="tab-certificados" id="tabBtnCertificados">
+            <span class="tab-icon">📜</span>
+            <span class="tab-label">Certificados</span>
+        </button>
     </nav>
 
     <!-- Modal cambio de contraseña -->
     <div id="modalPassword" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
-      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;">
+        <button id="btnCerrarModalPass" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
         <div style="font-size:2rem;text-align:center;margin-bottom:8px;">🔐</div>
         <h3 style="text-align:center;margin-bottom:4px;">Cambiar contraseña</h3>
-        <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">Es tu primer inicio de sesión. Cambiá tu contraseña por una nueva.</p>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">Cambiá tu contraseña por una nueva.</p>
         <form id="formCambioPassword">
           <div class="form-group">
             <label for="newPassword">Nueva contraseña</label>
@@ -153,6 +190,7 @@
       </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/db.js"></script>
     <script>
@@ -174,6 +212,7 @@
             sessionBarrio = session.barrio;
             sessionUsername = session.username || '';
             sessionRegistroId = session.registroId || '';
+            var sessionName = session.name || '';
 
 
 
@@ -187,13 +226,14 @@
             // Restringir según rol
             if (sessionRole === 'Presidente') {
                 document.getElementById('tabBtnInscripcion').style.display = 'none';
+                document.getElementById('tabBtnCertificados').style.display = 'none';
                 document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
                 document.getElementById('tab-inscripcion').classList.remove('active');
                 document.getElementById('tab-consultar').classList.add('active');
                 document.getElementById('pageTitle').textContent = 'Consultar';
                 document.getElementById('buscarCedula').value = '';
             } else {
-                document.querySelector('.tab-item[data-tab="tab-inscripcion"]').classList.add('active');
+                document.getElementById('tabBtnInscripcion').classList.add('active');
             }
         })();
 
@@ -204,6 +244,16 @@
         });
 
         // ===== CAMBIO DE CONTRASEÑA =====
+        document.getElementById('btnCambiarPassTop').addEventListener('click', function () {
+            document.getElementById('modalPassword').style.display = 'flex';
+        });
+        document.getElementById('btnCerrarModalPass').addEventListener('click', function () {
+            document.getElementById('modalPassword').style.display = 'none';
+        });
+        document.getElementById('modalPassword').addEventListener('click', function (e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+
         document.getElementById('formCambioPassword').addEventListener('submit', async function (e) {
             e.preventDefault();
             const msg = document.getElementById('modalMsg');
@@ -261,10 +311,12 @@
         const pages = {
             'tab-inscripcion': document.getElementById('tab-inscripcion'),
             'tab-consultar': document.getElementById('tab-consultar'),
+            'tab-certificados': document.getElementById('tab-certificados'),
         };
         const titles = {
             'tab-inscripcion': 'Inscripción',
             'tab-consultar': 'Consultar',
+            'tab-certificados': 'Certificados',
         };
 
         tabItems.forEach(function (btn) {
@@ -406,6 +458,117 @@
             setTimeout(function () {
                 msg.style.display = 'none';
             }, 3000);
+        });
+
+        // ===== CERTIFICADOS =====
+        var certDataCache = null;
+
+        document.getElementById('btnConsultarCert').addEventListener('click', async function () {
+            const cedula = document.getElementById('certCedula').value.trim();
+            document.getElementById('certResultado').style.display = 'none';
+            document.getElementById('certNoResultado').style.display = 'none';
+            if (!cedula) return;
+
+            const all = await getRegistros();
+            const persona = (all || []).find(function (r) {
+                return r.cedula === cedula && r.barrio === sessionBarrio;
+            });
+
+            if (!persona) {
+                document.getElementById('certNoResultado').style.display = 'block';
+                certDataCache = null;
+                return;
+            }
+
+            certDataCache = persona;
+            document.getElementById('certData').innerHTML =
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<div><strong>Nombres:</strong> ' + persona.nombres + '</div>' +
+                '<div><strong>Apellidos:</strong> ' + persona.apellidos + '</div>' +
+                '<div><strong>Cédula:</strong> ' + persona.cedula + '</div>' +
+                '<div><strong>Teléfono:</strong> ' + (persona.telefono || '—') + '</div>' +
+                '<div><strong>Dirección:</strong> ' + (persona.direccion || '—') + '</div>' +
+                '<div><strong>Barrio:</strong> ' + persona.barrio + '</div>' +
+                '</div>';
+            document.getElementById('certResultado').style.display = 'block';
+            document.getElementById('certNoResultado').style.display = 'none';
+        });
+
+        document.getElementById('btnGenerarCert').addEventListener('click', function () {
+            if (!certDataCache) return;
+            const p = certDataCache;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'letter');
+            const pageW = 216;
+            const margin = 20;
+            const contentW = pageW - margin * 2;
+            let y = margin;
+
+            function ctr(text, size, style) {
+                doc.setFont('helvetica', style || 'normal');
+                doc.setFontSize(size || 12);
+                doc.text(text, pageW / 2, y, { align: 'center' });
+                y += (size || 12) * 0.5;
+            }
+
+            function line(text, size, style) {
+                doc.setFont('helvetica', style || 'normal');
+                doc.setFontSize(size || 11);
+                doc.text(text, margin, y);
+                y += (size || 11) * 0.55;
+            }
+
+            function hr() {
+                y += 4;
+                doc.setDrawColor(0);
+                doc.line(margin, y, pageW - margin, y);
+                y += 6;
+            }
+
+            // === Encabezado ===
+            ctr('JUNTA DE ACCIÓN COMUNAL', 16, 'bold');
+            ctr('Certificado de Vivienda', 13, 'normal');
+            hr();
+
+            line('CERTIFICADO N°: JAC-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000), 11, 'bold');
+            line('Fecha de emisión: ' + new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }), 10);
+            y += 6;
+
+            // === Cuerpo ===
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            const texto = 'El Secretario de la Junta de Acción Comunal del barrio ' + p.barrio + ',';
+            doc.text(texto, margin, y);
+            y += 7;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text('C E R T I F I C A:', margin, y);
+            y += 9;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            const body = 'Que el(la) señor(a) ' + p.nombres.toUpperCase() + ' ' + p.apellidos.toUpperCase() +
+                ', identificado(a) con cédula de ciudadanía No. ' + p.cedula +
+                ', reside en la dirección ' + (p.direccion || 'NO REGISTRA') +
+                ', en el barrio ' + p.barrio + ' de esta localidad.';
+            const lines = doc.splitTextToSize(body, contentW);
+            doc.text(lines, margin, y);
+            y += lines.length * 6 + 4;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text('El presente certificado se expide a solicitud del interesado a los ' +
+                new Date().getDate() + ' días del mes de ' +
+                new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) + '.', margin, y);
+            y += 16;
+
+            // === Firma ===
+            ctr('____________________________________', 11);
+            ctr(sessionName.toUpperCase(), 11, 'bold');
+            ctr('Secretario(a) JAC - Barrio ' + p.barrio, 10);
+
+            doc.save('certificado_vivienda_' + p.cedula + '.pdf');
         });
 
         // ===== EXPORTAR =====
