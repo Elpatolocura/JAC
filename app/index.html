@@ -29,8 +29,66 @@
                 <button type="submit" class="btn-primary">Ingresar</button>
                 <div class="msg" id="msg"></div>
             </form>
+            <div style="text-align:center;margin-top:16px;">
+                <button class="btn-secondary" id="btnRegistro" style="width:100%;">📝 Registrarse</button>
+            </div>
             </div>
         </div>
+    </div>
+
+    <!-- Modal Registro -->
+    <div id="modalRegistro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;max-height:90vh;overflow-y:auto;">
+        <div style="font-size:2rem;text-align:center;margin-bottom:4px;">📝</div>
+        <h3 style="text-align:center;margin-bottom:16px;">Registrar Usuario</h3>
+        <form id="formRegistro">
+          <div class="form-group">
+            <label for="regUsername">Usuario</label>
+            <input type="text" id="regUsername" placeholder="Nombre de usuario" required>
+          </div>
+          <div class="form-group">
+            <label for="regPassword">Contraseña</label>
+            <input type="password" id="regPassword" placeholder="Contraseña" required minlength="4">
+          </div>
+          <div class="form-group">
+            <label for="regCedula">N° Cédula</label>
+            <input type="text" id="regCedula" placeholder="Cédula del usuario">
+          </div>
+          <div class="form-group">
+            <label for="regName">Nombre completo</label>
+            <input type="text" id="regName" placeholder="Nombre y apellidos" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regRole">Rol</label>
+              <select id="regRole" required>
+                <option value="">Seleccione</option>
+                <option value="Presidente">Presidente</option>
+                <option value="Secretario">Secretario</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="regBarrio">Barrio</label>
+              <select id="regBarrio" required>
+                <option value="">Seleccione</option>
+                <option value="El Progreso">El Progreso</option>
+                <option value="Villa Nueva">Villa Nueva</option>
+                <option value="Los Olivos">Los Olivos</option>
+                <option value="San Fernando">San Fernando</option>
+                <option value="La Florida">La Florida</option>
+                <option value="El Carmen">El Carmen</option>
+                <option value="Bella Vista">Bella Vista</option>
+                <option value="Centro">Centro</option>
+                <option value="La Esperanza">La Esperanza</option>
+                <option value="Ciudad Jardín">Ciudad Jardín</option>
+                <option value="Torices">Torices</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Crear usuario</button>
+          <div class="msg" id="regMsg"></div>
+        </form>
+      </div>
     </div>
     <script src="js/supabase.js"></script>
     <script src="js/db.js"></script>
@@ -69,6 +127,67 @@
                 msgEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Ingresar';
+            }
+        });
+
+        // ===== REGISTRO =====
+        document.getElementById('btnRegistro').addEventListener('click', function () {
+            document.getElementById('modalRegistro').style.display = 'flex';
+        });
+
+        document.getElementById('modalRegistro').addEventListener('click', function (e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+
+        document.getElementById('formRegistro').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msg = document.getElementById('regMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            const campos = {
+                username: document.getElementById('regUsername').value.trim(),
+                password: document.getElementById('regPassword').value.trim(),
+                cedula: document.getElementById('regCedula').value.trim(),
+                name: document.getElementById('regName').value.trim(),
+                role: document.getElementById('regRole').value,
+                barrio: document.getElementById('regBarrio').value,
+            };
+
+            if (!campos.username || !campos.password || !campos.name || !campos.role || !campos.barrio) {
+                msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            if (campos.password.length < 4) {
+                msg.textContent = 'La contraseña debe tener al menos 4 caracteres';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Creando...';
+
+            const result = await registerUser(campos);
+
+            if (result.ok) {
+                msg.textContent = '✅ Usuario creado exitosamente. Ya puede iniciar sesión.';
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                this.reset();
+                setTimeout(function () {
+                    document.getElementById('modalRegistro').style.display = 'none';
+                    msg.style.display = 'none';
+                }, 2000);
+            } else {
+                msg.textContent = result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Crear usuario';
             }
         });
     </script>

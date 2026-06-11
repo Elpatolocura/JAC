@@ -90,6 +90,33 @@ async function changePassword(cedulaOrUsername, newPassword, isUsuario) {
   }
 }
 
+async function registerUser(campos) {
+  try {
+    // Verificar si el usuario ya existe
+    const existentes = await apiFetch(
+      'usuarios?username=eq.' + encodeURIComponent(campos.username) + '&select=id'
+    );
+    if (existentes && existentes.length > 0) {
+      return { ok: false, error: 'El nombre de usuario ya está en uso' };
+    }
+    await apiFetch('usuarios', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: campos.username,
+        password: campos.password,
+        cedula: campos.cedula || '',
+        name: campos.name,
+        role: campos.role,
+        barrio: campos.barrio,
+        cambio_requerido: campos.cedula ? true : false,
+      }),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function getRegistros() {
   try {
     return await apiFetch('registros?order=id.asc&select=*');
