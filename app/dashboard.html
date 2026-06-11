@@ -199,6 +199,7 @@
         var sessionBarrio = '';
         var sessionUsername = '';
         var sessionRegistroId = '';
+        var sessionName = '';
         (function () {
             const sessionData = localStorage.getItem('jac_session');
             if (!sessionData || !sessionData.includes('barrio')) {
@@ -212,7 +213,7 @@
             sessionBarrio = session.barrio;
             sessionUsername = session.username || '';
             sessionRegistroId = session.registroId || '';
-            var sessionName = session.name || '';
+            sessionName = session.name || '';
 
 
 
