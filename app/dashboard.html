@@ -149,6 +149,71 @@
                 </div>
             </div>
         </section>
+
+        <!-- TAB 4: Actas -->
+        <section class="page" id="tab-actas">
+            <div class="card">
+                <div class="card-title">📄 Acta de Reunión</div>
+                <form id="formActa">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actaNumero">N° de Acta</label>
+                            <input type="text" id="actaNumero" placeholder="Ej: 001" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actaFecha">Fecha</label>
+                            <input type="date" id="actaFecha" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actaHoraInicio">Hora de inicio</label>
+                            <input type="time" id="actaHoraInicio" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actaHoraFin">Hora de finalización</label>
+                            <input type="time" id="actaHoraFin" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actaLugar">Lugar</label>
+                            <input type="text" id="actaLugar" placeholder="Salón comunal, casa, etc." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actaTipo">Tipo de reunión</label>
+                            <select id="actaTipo" required>
+                                <option value="">Seleccione</option>
+                                <option value="Ordinaria">Ordinaria</option>
+                                <option value="Extraordinaria">Extraordinaria</option>
+                                <option value="Asamblea General">Asamblea General</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="actaOrdenDia">Orden del día</label>
+                        <textarea id="actaOrdenDia" placeholder="1. Verificación del quórum&#10;2. Lectura del acta anterior&#10;3. ..." style="min-height:100px;" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="actaDesarrollo">Desarrollo de la reunión</label>
+                        <textarea id="actaDesarrollo" placeholder="Describí cómo se desarrolló la reunión..." style="min-height:120px;" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="actaAcuerdos">Acuerdos y compromisos</label>
+                        <textarea id="actaAcuerdos" placeholder="1. ...&#10;2. ..." style="min-height:80px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">💾 Guardar Acta</button>
+                    <div class="msg" id="actaMsg"></div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>📋 Actas registradas</h4>
+                </div>
+                <div id="actasList"></div>
+            </div>
+        </section>
     </div>
 
     <nav class="tab-bar" id="tabBar">
@@ -163,6 +228,10 @@
         <button class="tab-item" data-tab="tab-certificados" id="tabBtnCertificados">
             <span class="tab-icon">📜</span>
             <span class="tab-label">Certificados</span>
+        </button>
+        <button class="tab-item" data-tab="tab-actas" id="tabBtnActas">
+            <span class="tab-icon">📄</span>
+            <span class="tab-label">Actas</span>
         </button>
     </nav>
 
@@ -346,6 +415,7 @@
             if (sessionRole === 'Presidente') {
                 document.getElementById('tabBtnInscripcion').style.display = 'none';
                 document.getElementById('tabBtnCertificados').style.display = 'none';
+                document.getElementById('tabBtnActas').style.display = 'none';
                 document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
                 document.getElementById('tab-inscripcion').classList.remove('active');
                 document.getElementById('tab-consultar').classList.add('active');
@@ -496,11 +566,13 @@
             'tab-inscripcion': document.getElementById('tab-inscripcion'),
             'tab-consultar': document.getElementById('tab-consultar'),
             'tab-certificados': document.getElementById('tab-certificados'),
+            'tab-actas': document.getElementById('tab-actas'),
         };
         const titles = {
             'tab-inscripcion': 'Inscripción',
             'tab-consultar': 'Consultar',
             'tab-certificados': 'Certificados',
+            'tab-actas': 'Actas',
         };
 
         tabItems.forEach(function (btn) {
@@ -515,6 +587,9 @@
                 if (target === 'tab-consultar') {
                     document.getElementById('buscarCedula').value = '';
                     renderTable().catch(function () {});
+                }
+                if (target === 'tab-actas') {
+                    cargarActas().catch(function () {});
                 }
             });
         });
@@ -799,6 +874,77 @@
             }
         });
 
+        // ===== ACTAS =====
+        var actasCache = [];
+
+        async function cargarActas() {
+            actasCache = await getActas(sessionBarrio);
+            var container = document.getElementById('actasList');
+            if (actasCache.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>No hay actas registradas</p></div>';
+                return;
+            }
+            container.innerHTML = actasCache.map(function (a) {
+                return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:0.9rem;">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+                    '<strong>Acta N° ' + a.numero + '</strong>' +
+                    '<span style="font-size:0.8rem;color:var(--text-muted);">' + a.fecha + ' | ' + a.hora_inicio + ' - ' + a.hora_fin + '</span>' +
+                    '</div>' +
+                    '<div style="color:var(--text-muted);font-size:0.85rem;">' + a.lugar + ' · ' + a.tipo + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        document.getElementById('formActa').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('actaMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            var campos = {
+                numero: document.getElementById('actaNumero').value.trim(),
+                fecha: document.getElementById('actaFecha').value,
+                hora_inicio: document.getElementById('actaHoraInicio').value,
+                hora_fin: document.getElementById('actaHoraFin').value,
+                lugar: document.getElementById('actaLugar').value.trim(),
+                tipo: document.getElementById('actaTipo').value,
+                orden_dia: document.getElementById('actaOrdenDia').value.trim(),
+                desarrollo: document.getElementById('actaDesarrollo').value.trim(),
+                acuerdos: document.getElementById('actaAcuerdos').value.trim(),
+                barrio: sessionBarrio,
+                creado_por: sessionName,
+            };
+
+            if (!campos.numero || !campos.fecha || !campos.hora_inicio || !campos.hora_fin || !campos.lugar || !campos.tipo || !campos.orden_dia || !campos.desarrollo) {
+                msg.textContent = 'Completá todos los campos obligatorios';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            var btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            var result = await saveActa(campos);
+
+            if (result.ok) {
+                msg.textContent = '✅ Acta guardada exitosamente';
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                this.reset();
+                cargarActas();
+                setTimeout(function () { msg.style.display = 'none'; }, 3000);
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '💾 Guardar Acta';
+        });
+
         // ===== EDICIÓN DE REGISTRO =====
         var editData = null;
 
@@ -977,6 +1123,7 @@
 
         // ===== INIT =====
         renderTable().catch(function () {});
+        cargarActas().catch(function () {});
     </script>
 </body>
 </html>

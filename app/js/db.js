@@ -145,6 +145,26 @@ async function saveRegistro(campos) {
   }
 }
 
+async function getActas(barrio) {
+  try {
+    return await apiFetch('actas?barrio=eq.' + encodeURIComponent(barrio) + '&order=created_at.desc&select=*');
+  } catch {
+    return [];
+  }
+}
+
+async function saveActa(campos) {
+  try {
+    await apiFetch('actas', {
+      method: 'POST',
+      body: JSON.stringify(campos),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function updateRegistro(id, campos) {
   try {
     const url = SUPABASE_URL + '/rest/v1/registros?id=eq.' + encodeURIComponent(id);

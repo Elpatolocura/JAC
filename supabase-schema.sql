@@ -111,3 +111,28 @@ DROP POLICY IF EXISTS anon_insert_soporte ON soporte;
 CREATE POLICY anon_insert_soporte ON soporte FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS anon_select_soporte ON soporte;
 CREATE POLICY anon_select_soporte ON soporte FOR SELECT USING (true);
+
+-- ============================================
+-- Tabla de actas de reunión
+-- ============================================
+CREATE TABLE IF NOT EXISTS actas (
+  id BIGSERIAL PRIMARY KEY,
+  numero TEXT NOT NULL,
+  fecha TEXT NOT NULL,
+  hora_inicio TEXT NOT NULL,
+  hora_fin TEXT NOT NULL,
+  lugar TEXT NOT NULL,
+  tipo TEXT NOT NULL,
+  orden_dia TEXT NOT NULL,
+  desarrollo TEXT NOT NULL,
+  acuerdos TEXT DEFAULT '',
+  barrio TEXT NOT NULL,
+  creado_por TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE actas ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_actas ON actas;
+CREATE POLICY anon_insert_actas ON actas FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_actas ON actas;
+CREATE POLICY anon_select_actas ON actas FOR SELECT USING (true);
