@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password TEXT NOT NULL,
   cedula TEXT DEFAULT '',
   name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario')),
+  role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario', 'Tesorero')),
   ciudad TEXT DEFAULT '',
   barrio TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()

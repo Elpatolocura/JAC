@@ -249,6 +249,76 @@
                 </form>
             </div>
         </section>
+
+        <!-- TAB 5: Libro Tesorería -->
+        <section class="page" id="tab-tesoreria">
+            <div class="card">
+                <div class="card-title">💰 Libro de Tesorería</div>
+                <div class="stat-bar" style="margin-bottom:16px;">
+                    <div class="stat-chip"><span class="num" id="tesoSaldoActual">$0</span><span class="label">Saldo actual</span></div>
+                    <div class="stat-chip"><span class="num" id="tesoTotalIngresos">$0</span><span class="label">Total ingresos</span></div>
+                    <div class="stat-chip"><span class="num" id="tesoTotalEgresos">$0</span><span class="label">Total egresos</span></div>
+                </div>
+                <form id="formTesorería">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tesoFecha">Fecha</label>
+                            <input type="date" id="tesoFecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tesoCategoria">Categoría</label>
+                            <select id="tesoCategoria" required>
+                                <option value="">Seleccione</option>
+                                <option value="ingreso">Ingreso</option>
+                                <option value="egreso">Egreso</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="tesoDescripcion">Descripción</label>
+                        <input type="text" id="tesoDescripcion" placeholder="Ej: Aporte de afiliados, pago de servicios..." required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tesoValor">Valor ($)</label>
+                            <input type="number" id="tesoValor" placeholder="0" min="1" step="1" required>
+                        </div>
+                        <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;">
+                            <button type="submit" class="btn-primary" id="btnGuardarMovimiento" style="flex:1;">💾 Agregar</button>
+                            <button type="button" class="btn-primary" id="btnCancelarEdicionTeso" style="flex:0;width:auto;padding:12px 16px;background:#6b7280;display:none;" onclick="cancelarEdicionTeso()">✕</button>
+                        </div>
+                    </div>
+                    <div class="msg" id="tesoMsg"></div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>📋 Movimientos</h4>
+                    <button class="btn-primary" id="btnExportarTeso" style="width:auto;padding:8px 20px;font-size:0.85rem;margin:0;">📥 Exportar</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Valor</th>
+                                <th>Saldo</th>
+                                <th style="width:90px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTesoreria"></tbody>
+                    </table>
+                    <div class="empty-state" id="tesoEmpty">
+                        <div class="empty-icon">💰</div>
+                        <p>No hay movimientos registrados</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <nav class="tab-bar" id="tabBar">
@@ -267,6 +337,10 @@
         <button class="tab-item" data-tab="tab-actas" id="tabBtnActas">
             <span class="tab-icon">📄</span>
             <span class="tab-label">Actas</span>
+        </button>
+        <button class="tab-item" data-tab="tab-tesoreria" id="tabBtnTesorería">
+            <span class="tab-icon">💰</span>
+            <span class="tab-label">Tesorería</span>
         </button>
     </nav>
 
@@ -468,12 +542,23 @@
                 document.getElementById('tabBtnInscripcion').style.display = 'none';
                 document.getElementById('tabBtnCertificados').style.display = 'none';
                 document.getElementById('tabBtnActas').style.display = 'none';
+                document.getElementById('tabBtnTesorería').style.display = 'none';
+                document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
+                document.getElementById('tab-inscripcion').classList.remove('active');
+                document.getElementById('tab-consultar').classList.add('active');
+                document.getElementById('pageTitle').textContent = 'Consultar';
+                document.getElementById('buscarCedula').value = '';
+            } else if (sessionRole === 'Tesorero') {
+                document.getElementById('tabBtnInscripcion').style.display = 'none';
+                document.getElementById('tabBtnCertificados').style.display = 'none';
+                document.getElementById('tabBtnActas').style.display = 'none';
                 document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
                 document.getElementById('tab-inscripcion').classList.remove('active');
                 document.getElementById('tab-consultar').classList.add('active');
                 document.getElementById('pageTitle').textContent = 'Consultar';
                 document.getElementById('buscarCedula').value = '';
             } else {
+                document.getElementById('tabBtnTesorería').style.display = 'none';
                 document.getElementById('tabBtnInscripcion').classList.add('active');
             }
         })();
@@ -619,12 +704,14 @@
             'tab-consultar': document.getElementById('tab-consultar'),
             'tab-certificados': document.getElementById('tab-certificados'),
             'tab-actas': document.getElementById('tab-actas'),
+            'tab-tesoreria': document.getElementById('tab-tesoreria'),
         };
         const titles = {
             'tab-inscripcion': 'Inscripción',
             'tab-consultar': 'Consultar',
             'tab-certificados': 'Certificados',
             'tab-actas': 'Actas',
+            'tab-tesoreria': 'Tesorería',
         };
 
         tabItems.forEach(function (btn) {
@@ -1415,6 +1502,201 @@
             link.download = 'registros_jac_' + new Date().toISOString().slice(0, 10) + '.csv';
             link.click();
         });
+
+        // ===== TESORERÍA =====
+        const TESO_KEY = 'jac_tesoreria_' + sessionBarrio + '_' + (sessionCiudad || '');
+
+        function getMovimientosTeso() {
+            try { return JSON.parse(localStorage.getItem(TESO_KEY)) || []; } catch { return []; }
+        }
+
+        function guardarMovimientosTeso(list) {
+            localStorage.setItem(TESO_KEY, JSON.stringify(list));
+        }
+
+        function calcularSaldosTeso(list) {
+            var ingresos = 0, egresos = 0;
+            list.forEach(function (m) {
+                if (m.categoria === 'ingreso') ingresos += Number(m.valor);
+                else egresos += Number(m.valor);
+            });
+            return { ingresos: ingresos, egresos: egresos, saldo: ingresos - egresos };
+        }
+
+        function renderTablaTeso() {
+            var list = getMovimientosTeso();
+            var s = calcularSaldosTeso(list);
+            document.getElementById('tesoSaldoActual').textContent = '$' + s.saldo.toLocaleString('es-CO');
+            document.getElementById('tesoTotalIngresos').textContent = '$' + s.ingresos.toLocaleString('es-CO');
+            document.getElementById('tesoTotalEgresos').textContent = '$' + s.egresos.toLocaleString('es-CO');
+
+            var tbody = document.getElementById('tablaTesoreria');
+            var empty = document.getElementById('tesoEmpty');
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            var saldoAcum = 0;
+            tbody.innerHTML = list.map(function (m, i) {
+                saldoAcum += (m.categoria === 'ingreso' ? Number(m.valor) : -Number(m.valor));
+                var cls = m.categoria === 'ingreso' ? 'style="color:#059669;font-weight:600;"' : 'style="color:#dc2626;font-weight:600;"';
+                return '<tr>' +
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td>' + m.fecha + '</td>' +
+                    '<td>' + m.descripcion + '</td>' +
+                    '<td ' + cls + '>' + (m.categoria === 'ingreso' ? 'Ingreso' : 'Egreso') + '</td>' +
+                    '<td ' + cls + '>$' + Number(m.valor).toLocaleString('es-CO') + '</td>' +
+                    '<td>$' + saldoAcum.toLocaleString('es-CO') + '</td>' +
+                    '<td style="white-space:nowrap;">' +
+                    '<button class="btn-editar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;margin-right:4px;">✏️</button>' +
+                    '<button class="btn-eliminar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;">🗑</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+
+            tbody.querySelectorAll('.btn-editar-teso').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    editarMovimientoTeso(Number(this.dataset.idx));
+                });
+            });
+            tbody.querySelectorAll('.btn-eliminar-teso').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    eliminarMovimientoTeso(Number(this.dataset.idx));
+                });
+            });
+        }
+
+        var tesoEditIdx = -1;
+
+        function cancelarEdicionTeso() {
+            tesoEditIdx = -1;
+            document.getElementById('formTesorería').reset();
+            document.getElementById('tesoFecha').value = '';
+            document.getElementById('btnGuardarMovimiento').textContent = '💾 Agregar';
+            document.getElementById('btnCancelarEdicionTeso').style.display = 'none';
+            document.getElementById('tesoMsg').style.display = 'none';
+        }
+
+        function editarMovimientoTeso(idx) {
+            var list = getMovimientosTeso();
+            if (idx < 0 || idx >= list.length) return;
+            var m = list[idx];
+            tesoEditIdx = idx;
+            document.getElementById('tesoFecha').value = m.fecha;
+            document.getElementById('tesoCategoria').value = m.categoria;
+            document.getElementById('tesoDescripcion').value = m.descripcion;
+            document.getElementById('tesoValor').value = m.valor;
+            document.getElementById('btnGuardarMovimiento').textContent = '💾 Actualizar';
+            document.getElementById('btnCancelarEdicionTeso').style.display = 'block';
+            document.getElementById('tesoMsg').style.display = 'none';
+            document.getElementById('tesoMsg').className = 'msg';
+            document.getElementById('formTesorería').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function eliminarMovimientoTeso(idx) {
+            if (!confirm('¿Estás seguro de eliminar este movimiento?')) return;
+            var list = getMovimientosTeso();
+            list.splice(idx, 1);
+            guardarMovimientosTeso(list);
+            renderTablaTeso();
+        }
+
+        document.getElementById('formTesorería').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('tesoMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            var fecha = document.getElementById('tesoFecha').value.trim();
+            var categoria = document.getElementById('tesoCategoria').value;
+            var descripcion = document.getElementById('tesoDescripcion').value.trim();
+            var valor = document.getElementById('tesoValor').value.trim();
+
+            if (!fecha || !categoria || !descripcion || !valor) {
+                msg.textContent = 'Todos los campos son obligatorios';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            if (isNaN(Date.parse(fecha))) {
+                msg.textContent = 'Ingresá una fecha válida';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            var numValor = Number(valor);
+            if (numValor <= 0 || !Number.isInteger(numValor)) {
+                msg.textContent = 'El valor debe ser un número entero positivo';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            var list = getMovimientosTeso();
+            var movimiento = { fecha: fecha, categoria: categoria, descripcion: descripcion, valor: numValor };
+
+            if (tesoEditIdx >= 0 && tesoEditIdx < list.length) {
+                list[tesoEditIdx] = movimiento;
+                tesoEditIdx = -1;
+                document.getElementById('btnGuardarMovimiento').textContent = '💾 Agregar';
+                document.getElementById('btnCancelarEdicionTeso').style.display = 'none';
+            } else {
+                list.push(movimiento);
+            }
+
+            guardarMovimientosTeso(list);
+            renderTablaTeso();
+            document.getElementById('formTesorería').reset();
+            document.getElementById('tesoFecha').value = '';
+            msg.textContent = '✅ Movimiento guardado correctamente';
+            msg.className = 'msg success';
+            msg.style.display = 'block';
+            setTimeout(function () { msg.style.display = 'none'; }, 2000);
+        });
+
+        document.getElementById('btnExportarTeso').addEventListener('click', function () {
+            var list = getMovimientosTeso();
+            if (list.length === 0) { alert('No hay movimientos para exportar'); return; }
+
+            var saldoAcum = 0;
+            var rows = [['#', 'Fecha', 'Descripción', 'Categoría', 'Valor', 'Saldo']];
+            list.forEach(function (m, i) {
+                saldoAcum += (m.categoria === 'ingreso' ? Number(m.valor) : -Number(m.valor));
+                rows.push([
+                    i + 1, m.fecha, m.descripcion,
+                    m.categoria === 'ingreso' ? 'Ingreso' : 'Egreso',
+                    Number(m.valor), saldoAcum
+                ]);
+            });
+
+            var csv = rows.map(function (r) {
+                return r.map(function (c) {
+                    var s = String(c);
+                    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                        return '"' + s.replace(/"/g, '""') + '"';
+                    }
+                    return s;
+                }).join(',');
+            }).join('\r\n');
+
+            var BOM = '\uFEFF';
+            var blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'libro_tesoreria_' + (sessionCiudad || sessionBarrio) + '_' + sessionBarrio + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        });
+
+        // Cargar tesorería al iniciar si el rol es Tesorero
+        if (sessionRole === 'Tesorero') {
+            renderTablaTeso();
+        }
 
         // ===== INIT =====
         renderTable().catch(function () {});
