@@ -14,8 +14,13 @@
         </div>
         <div class="topbar-right">
             <span class="user-name" id="userName">Usuario</span>
-            <button class="logout-btn" id="btnCambiarPassTop" title="Cambiar contraseña" style="font-size:1.1rem;">🔑</button>
-            <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">🚪</button>
+            <div class="user-menu">
+                <button class="user-menu-btn" id="menuToggle" title="Menú">⚙️</button>
+                <div class="user-menu-dropdown" id="userDropdown">
+                    <button id="btnCambiarPassTop">🔑 Cambiar contraseña</button>
+                    <button id="logoutBtn">🚪 Cerrar sesión</button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -303,6 +308,15 @@
             }
         })();
 
+        // ===== MENÚ =====
+        document.getElementById('menuToggle').addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.getElementById('userDropdown').classList.toggle('show');
+        });
+        document.addEventListener('click', function () {
+            document.getElementById('userDropdown').classList.remove('show');
+        });
+
         // ===== LOGOUT =====
         document.getElementById('logoutBtn').addEventListener('click', function () {
             localStorage.removeItem('jac_session');
@@ -312,6 +326,7 @@
         // ===== CAMBIO DE CONTRASEÑA =====
         document.getElementById('btnCambiarPassTop').addEventListener('click', function () {
             document.getElementById('modalPassword').style.display = 'flex';
+            document.getElementById('userDropdown').classList.remove('show');
         });
         document.getElementById('btnCerrarModalPass').addEventListener('click', function () {
             document.getElementById('modalPassword').style.display = 'none';
