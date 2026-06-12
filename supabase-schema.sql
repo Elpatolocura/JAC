@@ -141,6 +141,12 @@ CREATE POLICY anon_select_actas ON actas FOR SELECT USING (true);
 -- Migración para tabla existente
 ALTER TABLE actas ADD COLUMN IF NOT EXISTS imagenes TEXT DEFAULT '';
 
+-- Eliminar actas duplicadas (conserva la más antigua)
+DELETE FROM actas a USING actas b WHERE a.id > b.id AND a.numero = b.numero AND a.barrio = b.barrio;
+
+-- Restricción única: no pueden existir dos actas con el mismo número en el mismo barrio
+ALTER TABLE actas ADD CONSTRAINT actas_numero_barrio_unique UNIQUE (numero, barrio);
+
 -- Bucket de almacenamiento para evidencias (ejecutar en Storage > Create bucket o SQL)
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('evidencias', 'evidencias', true) ON CONFLICT DO NOTHING;
 -- CREATE POLICY anon_select_evidencias ON storage.objects FOR SELECT USING (bucket_id = 'evidencias');

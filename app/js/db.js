@@ -125,6 +125,25 @@ async function registerUser(campos) {
   }
 }
 
+async function deleteActa(id) {
+  try {
+    const url = SUPABASE_URL + '/rest/v1/actas?id=eq.' + encodeURIComponent(id);
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal',
+      },
+    });
+    if (res.ok) return { ok: true };
+    const text = await res.text();
+    return { ok: false, error: text };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function getRegistros() {
   try {
     return await apiFetch('registros?order=id.asc&select=*');

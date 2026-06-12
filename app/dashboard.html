@@ -985,7 +985,8 @@
                 '<div style="margin-bottom:12px;"><strong>Desarrollo:</strong><br>' + a.desarrollo.replace(/\n/g, '<br>') + '</div>' +
                 (a.acuerdos ? '<div style="margin-bottom:12px;"><strong>Acuerdos y compromisos:</strong><br>' + a.acuerdos.replace(/\n/g, '<br>') + '</div>' : '') +
                 (fotosHtml ? '<div><strong>Evidencias:</strong>' + fotosHtml + '</div>' : '') +
-                '<div style="border-top:1px solid var(--border);margin-top:16px;padding-top:12px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Creado por: ' + a.creado_por + ' · ' + a.barrio + '</div>';
+                '<div style="border-top:1px solid var(--border);margin-top:16px;padding-top:12px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Creado por: ' + a.creado_por + ' · ' + a.barrio + '</div>' +
+                '<button onclick="eliminarActa(' + a.id + ')" style="margin-top:16px;width:100%;padding:10px;border:none;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:600;font-size:0.85rem;cursor:pointer;font-family:inherit;transition:background 0.2s;" onmouseenter="this.style.background=\'#fee2e2\'" onmouseleave="this.style.background=\'#fef2f2\'">🗑 Eliminar acta</button>';
             document.getElementById('modalActaCompleta').style.display = 'flex';
         }
 
@@ -1037,6 +1038,17 @@
             var isHidden = list.style.display === 'none';
             list.style.display = isHidden ? 'block' : 'none';
             toggle.textContent = isHidden ? 'Ver menos ▲' : 'Ver más ▼';
+        }
+
+        async function eliminarActa(id) {
+            if (!confirm('¿Estás seguro de eliminar esta acta? Esta acción no se puede deshacer.')) return;
+            var result = await deleteActa(id);
+            if (result.ok) {
+                document.getElementById('modalActaCompleta').style.display = 'none';
+                renderActasList();
+            } else {
+                alert('Error al eliminar: ' + result.error);
+            }
         }
 
         function mostrarActaCompletaById(id) {
