@@ -1005,6 +1005,15 @@
             var list = all.filter(function (a) {
                 return a.barrio === sessionBarrio;
             });
+            document.getElementById('actasCount').textContent = list.length + ' acta' + (list.length !== 1 ? 's' : '');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Aún no hay actas registradas</p></div>';
+                return;
+            }
+            list.forEach(function (a) {
+                if (a.imagenes) window['_actaFotos_' + a.id] = a.imagenes.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
+            });
+            container.innerHTML = list.map(function (a) {
                 var badge = '';
                 var tipoCls = a.tipo ? a.tipo.toLowerCase().replace(/\s+/g, '') : '';
                 if (a.tipo) badge = '<span class="acta-card-badge ' + tipoCls + '">' + a.tipo + '</span>';
