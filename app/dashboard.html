@@ -177,6 +177,14 @@
                     <p>No se encontró ningún acta con ese número en tu barrio</p>
                 </div>
             </div>
+
+            <div class="card" id="actasRegistradasSection">
+                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>📋 Actas Registradas</span>
+                    <span id="actasCount" style="font-size:0.8rem;font-weight:400;color:var(--text-muted);"></span>
+                </div>
+                <div id="actasList"></div>
+            </div>
         </section>
 
         <!-- TAB 4: Actas -->
@@ -239,14 +247,6 @@
                     <button type="submit" class="btn-primary">💾 Guardar Acta</button>
                     <div class="msg" id="actaMsg"></div>
                 </form>
-            </div>
-
-            <div class="card">
-                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span>📋 Actas Registradas</span>
-                    <span id="actasCount" style="font-size:0.8rem;font-weight:400;color:var(--text-muted);"></span>
-                </div>
-                <div id="actasList"></div>
             </div>
         </section>
     </div>
@@ -640,9 +640,11 @@
                     document.getElementById('buscarCedula').value = '';
                     renderTable().catch(function () {});
                 }
+                if (target === 'tab-certificados') {
+                    renderActasList().catch(function () {});
+                }
                 if (target === 'tab-actas') {
                     document.getElementById('actaNumero').value = '';
-                    renderActasList().catch(function () {});
                 }
             });
         });
@@ -1372,7 +1374,6 @@
 
         // ===== INIT =====
         renderTable().catch(function () {});
-        renderActasList().catch(function () {});
     </script>
 </body>
 </html>
