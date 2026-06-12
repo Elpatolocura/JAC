@@ -241,6 +241,13 @@
                 </form>
             </div>
 
+            <div class="card">
+                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>📋 Actas Registradas</span>
+                    <span id="actasCount" style="font-size:0.8rem;font-weight:400;color:var(--text-muted);"></span>
+                </div>
+                <div id="actasList"></div>
+            </div>
         </section>
     </div>
 
@@ -626,6 +633,7 @@
                 }
                 if (target === 'tab-actas') {
                     document.getElementById('actaNumero').value = '';
+                    renderActasList().catch(function () {});
                 }
             });
         });
@@ -934,6 +942,51 @@
             document.getElementById('modalActaCompleta').style.display = 'flex';
         }
 
+        async function renderActasList() {
+            var all = await getActas(sessionBarrio);
+            var list = (all || []).filter(function (a) {
+                if (a.ciudad) return a.ciudad === sessionCiudad && a.barrio === sessionBarrio;
+                return a.barrio === sessionBarrio;
+            });
+            var container = document.getElementById('actasList');
+            document.getElementById('actasCount').textContent = list.length + ' acta' + (list.length !== 1 ? 's' : '');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Aún no hay actas registradas</p><p style="font-size:0.85rem;margin-top:4px;">Usá el formulario de arriba para crear la primera.</p></div>';
+                return;
+            }
+            container.innerHTML = list.map(function (a) {
+                var badge = '';
+                var tipoCls = a.tipo ? a.tipo.toLowerCase().replace(/\s+/g, '') : '';
+                if (a.tipo) badge = '<span class="acta-card-badge ' + tipoCls + '">' + a.tipo + '</span>';
+                var thumbs = '';
+                if (a.imagenes) {
+                    var urls = a.imagenes.split(',');
+                    thumbs = '<div class="acta-card-thumbs">' +
+                        urls.slice(0, 3).map(function (u) { return '<img src="' + u.trim() + '">'; }).join('') +
+                        (urls.length > 3 ? '<span style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;">+' + (urls.length - 3) + '</span>' : '') +
+                        '</div>';
+                }
+                return '<div class="acta-card" onclick="mostrarActaCompletaById(' + a.id + ')">' +
+                    '<div class="acta-card-header">' +
+                    '<span class="acta-card-num">Acta N° ' + a.numero + '</span>' +
+                    '<span class="acta-card-meta">' + a.fecha + ' · ' + a.hora_inicio + ' - ' + a.hora_fin + '</span>' +
+                    '</div>' +
+                    '<div class="acta-card-detail">' + a.lugar + ' ' + badge + '</div>' +
+                    thumbs +
+                    '<div class="acta-card-footer">' +
+                    '<span class="acta-card-creator">Creado por: ' + (a.creado_por || '—') + '</span>' +
+                    '<button class="acta-card-btn" onclick="event.stopPropagation();mostrarActaCompletaById(' + a.id + ')">👁️ Ver</button>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function mostrarActaCompletaById(id) {
+            var all = window._actasCache || [];
+            var a = all.find(function (x) { return x.id == id; });
+            if (a) mostrarActaCompleta(a);
+        }
+
         // Búsqueda de acta por número
         document.getElementById('btnBuscarActa').addEventListener('click', async function () {
             var num = document.getElementById('buscarActaNum').value.trim();
@@ -941,7 +994,8 @@
             document.getElementById('actaNoResultado').style.display = 'none';
             if (!num) return;
 
-            var all = await getActas(sessionBarrio);
+            window._actasCache = await getActas(sessionBarrio);
+            var all = window._actasCache;
             var acta = (all || []).find(function (a) {
                 return a.numero === num && a.barrio === sessionBarrio;
             });
@@ -1083,7 +1137,7 @@
                 this.reset();
                 actaFotosArray = [];
                 document.getElementById('actaFotosPreview').innerHTML = '';
-                cargarActas();
+                renderActasList();
                 setTimeout(function () { msg.style.display = 'none'; }, 3000);
             } else {
                 msg.textContent = 'Error: ' + result.error;
@@ -1273,6 +1327,7 @@
 
         // ===== INIT =====
         renderTable().catch(function () {});
+        renderActasList().catch(function () {});
     </script>
 </body>
 </html>

@@ -590,6 +590,103 @@ table tr:hover td {
     flex-shrink: 0;
 }
 
+/* ===== ACTA CARDS ===== */
+.acta-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--blue);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.acta-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+.acta-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.acta-card-num {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--blue);
+}
+.acta-card-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+.acta-card-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.acta-card-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.acta-card-badge.ordinaria {
+    background: #dbeafe;
+    color: #2563eb;
+}
+.acta-card-badge.extraordinaria {
+    background: #fed7aa;
+    color: #c2410c;
+}
+.acta-card-badge.asamblea {
+    background: #bbf7d0;
+    color: #16a34a;
+}
+.acta-card-thumbs {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+.acta-card-thumbs img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+.acta-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+.acta-card-creator {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.acta-card-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--blue);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.acta-card-btn:hover {
+    background: var(--blue-dark);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .login-container {
