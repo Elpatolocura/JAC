@@ -1036,6 +1036,9 @@
             var list = document.getElementById('actasList');
             var toggle = document.getElementById('actasSectionToggle');
             var isHidden = list.style.display === 'none';
+            if (isHidden && list.children.length === 0) {
+                renderActasList().catch(function () {});
+            }
             list.style.display = isHidden ? 'block' : 'none';
             toggle.textContent = isHidden ? 'Ver menos ▲' : 'Ver más ▼';
         }
@@ -1407,6 +1410,7 @@
 
         // ===== INIT =====
         renderTable().catch(function () {});
+        renderActasList().catch(function (e) { console.error('Error al cargar actas:', e); });
     </script>
 </body>
 </html>
