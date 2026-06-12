@@ -687,26 +687,6 @@ table tr:hover td {
     background: var(--blue-dark);
 }
 
-.acta-toggle-btn {
-    display: block;
-    width: 100%;
-    padding: 8px;
-    margin-top: 8px;
-    border: none;
-    border-radius: 8px;
-    background: #f3f4f6;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.2s;
-}
-.acta-toggle-btn:hover {
-    background: #e5e7eb;
-    color: var(--text);
-}
-
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .login-container {

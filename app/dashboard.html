@@ -179,11 +179,11 @@
             </div>
 
             <div class="card" id="actasRegistradasSection">
-                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span>📋 Actas Registradas</span>
-                    <span id="actasCount" style="font-size:0.8rem;font-weight:400;color:var(--text-muted);"></span>
+                <div class="card-title" onclick="toggleActasSection()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                    <span>📋 Actas Registradas <span id="actasCount" style="font-size:0.8rem;font-weight:400;color:var(--text-muted);"></span></span>
+                    <span id="actasSectionToggle" style="font-size:0.8rem;color:var(--blue);font-weight:500;">Ver más ▼</span>
                 </div>
-                <div id="actasList"></div>
+                <div id="actasList" style="display:none;"></div>
             </div>
         </section>
 
@@ -1001,48 +1001,42 @@
                 container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Aún no hay actas registradas</p><p style="font-size:0.85rem;margin-top:4px;">Usá la pestaña Actas para crear la primera.</p></div>';
                 return;
             }
-            container.innerHTML = list.map(function (a) {
-                var badge = '';
-                var tipoCls = a.tipo ? a.tipo.toLowerCase().replace(/\s+/g, '') : '';
-                if (a.tipo) badge = '<span class="acta-card-badge ' + tipoCls + '">' + a.tipo + '</span>';
-                return '<div class="acta-card">' +
-                    '<div class="acta-card-header" onclick="toggleActaExpand(' + a.id + ')" style="cursor:pointer;">' +
-                    '<span class="acta-card-num">Acta N° ' + a.numero + '</span>' +
-                    '<span class="acta-card-meta">' + a.fecha + ' · ' + a.tipo + '</span>' +
-                    '</div>' +
-                    '<div id="actaExpand_' + a.id + '" style="display:none;">' +
-                    '<div class="acta-card-detail">' + a.lugar + ' · ' + a.hora_inicio + ' - ' + a.hora_fin + ' ' + badge + '</div>' +
-                    (function () {
-                        var thumbs = '';
-                        if (a.imagenes) {
-                            var urls = a.imagenes.split(',');
-                            thumbs = '<div class="acta-card-thumbs">' +
-                                urls.map(function (u, i) { return '<img src="' + u.trim() + '" onclick="event.stopPropagation();abrirCarrusel(window._actaFotos_' + a.id + ',' + i + ')" style="cursor:pointer;">'; }).join('') +
-                                '</div>';
-                        }
-                        return thumbs;
-                    })() +
-                    '<div class="acta-card-footer">' +
-                    '<span class="acta-card-creator">Creado por: ' + (a.creado_por || '—') + '</span>' +
-                    '<button class="acta-card-btn" onclick="event.stopPropagation();mostrarActaCompletaById(' + a.id + ')">👁️ Ver acta</button>' +
-                    '</div>' +
-                    '</div>' +
-                    '<button id="actaToggle_' + a.id + '" class="acta-toggle-btn" onclick="toggleActaExpand(' + a.id + ')">Ver más ▼</button>' +
-                    '</div>';
-            }).join('');
             // Guardar URLs de fotos para el carrusel
             list.forEach(function (a) {
                 if (a.imagenes) window['_actaFotos_' + a.id] = a.imagenes.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
             });
+            container.innerHTML = list.map(function (a) {
+                var badge = '';
+                var tipoCls = a.tipo ? a.tipo.toLowerCase().replace(/\s+/g, '') : '';
+                if (a.tipo) badge = '<span class="acta-card-badge ' + tipoCls + '">' + a.tipo + '</span>';
+                var thumbs = '';
+                if (a.imagenes) {
+                    var urls = a.imagenes.split(',');
+                    thumbs = '<div class="acta-card-thumbs">' +
+                        urls.map(function (u, i) { return '<img src="' + u.trim() + '" onclick="abrirCarrusel(window._actaFotos_' + a.id + ',' + i + ')" style="cursor:pointer;">'; }).join('') +
+                        '</div>';
+                }
+                return '<div class="acta-card">' +
+                    '<div class="acta-card-header">' +
+                    '<span class="acta-card-num">Acta N° ' + a.numero + '</span>' +
+                    '<span class="acta-card-meta">' + a.fecha + ' · ' + a.tipo + '</span>' +
+                    '</div>' +
+                    '<div class="acta-card-detail">' + a.lugar + ' · ' + a.hora_inicio + ' - ' + a.hora_fin + ' ' + badge + '</div>' +
+                    thumbs +
+                    '<div class="acta-card-footer">' +
+                    '<span class="acta-card-creator">Creado por: ' + (a.creado_por || '—') + '</span>' +
+                    '<button class="acta-card-btn" onclick="mostrarActaCompletaById(' + a.id + ')">👁️ Ver acta</button>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
         }
 
-        function toggleActaExpand(id) {
-            var content = document.getElementById('actaExpand_' + id);
-            var btn = document.getElementById('actaToggle_' + id);
-            if (!content) return;
-            var isHidden = content.style.display === 'none';
-            content.style.display = isHidden ? 'block' : 'none';
-            if (btn) btn.textContent = isHidden ? 'Ver menos ▲' : 'Ver más ▼';
+        function toggleActasSection() {
+            var list = document.getElementById('actasList');
+            var toggle = document.getElementById('actasSectionToggle');
+            var isHidden = list.style.display === 'none';
+            list.style.display = isHidden ? 'block' : 'none';
+            toggle.textContent = isHidden ? 'Ver menos ▲' : 'Ver más ▼';
         }
 
         function mostrarActaCompletaById(id) {
