@@ -515,6 +515,7 @@
             var sessionUsername = '';
             var sessionRegistroId = '';
             var sessionName = '';
+            var isReadOnly = false;
         (function () {
             const sessionData = localStorage.getItem('jac_session');
             if (!sessionData || !sessionData.includes('barrio')) {
@@ -533,21 +534,28 @@
 
 
 
+            isReadOnly = sessionRole === 'Presidente';
+
             // Auto-asignar ciudad y barrio del usuario en el formulario
             document.getElementById('ciudad').value = sessionCiudad;
             document.getElementById('barrio').value = sessionBarrio;
 
+            // Modo solo lectura para Presidente
+            if (isReadOnly) {
+                document.querySelectorAll('#formInscripcion input, #formInscripcion textarea').forEach(function (el) { el.disabled = true; });
+                document.querySelector('#formInscripcion button[type="submit"]').style.display = 'none';
+                document.querySelectorAll('#formActa input, #formActa textarea, #formActa select').forEach(function (el) { el.disabled = true; });
+                document.querySelector('#formActa button[type="submit"]').style.display = 'none';
+                document.getElementById('actaFotos').disabled = true;
+                document.querySelectorAll('#formTesorería input, #formTesorería select').forEach(function (el) { el.disabled = true; });
+                document.querySelector('#formTesorería button[type="submit"]').style.display = 'none';
+            }
+
             // Restringir según rol
             if (sessionRole === 'Presidente') {
-                document.getElementById('tabBtnInscripcion').style.display = 'none';
-                document.getElementById('tabBtnCertificados').style.display = 'none';
-                document.getElementById('tabBtnActas').style.display = 'none';
-                document.getElementById('tabBtnTesorería').style.display = 'none';
-                document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
-                document.getElementById('tab-inscripcion').classList.remove('active');
-                document.getElementById('tab-consultar').classList.add('active');
-                document.getElementById('pageTitle').textContent = 'Consultar';
-                document.getElementById('buscarCedula').value = '';
+                // Presidente puede ver todos los tabs pero no editar/eliminar
+                document.querySelector('.tab-item[data-tab="tab-inscripcion"]').classList.add('active');
+                document.getElementById('pageTitle').textContent = 'Inscripción';
             } else if (sessionRole === 'Tesorero') {
                 document.getElementById('tabBtnInscripcion').style.display = 'none';
                 document.getElementById('tabBtnCertificados').style.display = 'none';
@@ -733,6 +741,9 @@
                 if (target === 'tab-actas') {
                     document.getElementById('actaNumero').value = '';
                 }
+                if (target === 'tab-tesoreria') {
+                    renderTablaTeso();
+                }
             });
         });
 
@@ -772,13 +783,13 @@
             }
             empty.style.display = 'none';
 
-            var esSecretario = sessionRole === 'Secretario';
+            var puedeEditar = sessionRole === 'Secretario';
             tbody.innerHTML = list.map(function (r, i) {
                 var botones = '';
-                if (esSecretario) {
+                if (puedeEditar) {
                     botones += '<button class="btn-editar-reg" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-telefono="' + (r.telefono || '') + '" data-direccion="' + (r.direccion || '').replace(/"/g, '&quot;') + '" data-observacion="' + (r.observacion || '').replace(/"/g, '&quot;') + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;white-space:nowrap;margin-right:4px;">✏️</button>';
+                    botones += '<button class="btn-solicitar-elim" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-barrio="' + r.barrio + '" style="padding:4px 10px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;white-space:nowrap;">🗑 Solicitar</button>';
                 }
-                botones += '<button class="btn-solicitar-elim" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-barrio="' + r.barrio + '" style="padding:4px 10px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;white-space:nowrap;">🗑 Solicitar</button>';
                 return '<tr>' +
                     '<td>' + (i + 1) + '</td>' +
                     '<td>' + r.nombres + '</td>' +
@@ -839,6 +850,7 @@
         // ===== FORMULARIO =====
         document.getElementById('formInscripcion').addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (isReadOnly) { return; }
             const msg = document.getElementById('formMsg');
             msg.className = 'msg';
             msg.style.display = 'none';
@@ -1248,6 +1260,7 @@
 
         document.getElementById('formActa').addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (isReadOnly) { return; }
             var msg = document.getElementById('actaMsg');
             msg.className = 'msg';
             msg.style.display = 'none';
@@ -1551,22 +1564,24 @@
                     '<td ' + cls + '>$' + Number(m.valor).toLocaleString('es-CO') + '</td>' +
                     '<td>$' + saldoAcum.toLocaleString('es-CO') + '</td>' +
                     '<td style="white-space:nowrap;">' +
-                    '<button class="btn-editar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;margin-right:4px;">✏️</button>' +
-                    '<button class="btn-eliminar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;">🗑</button>' +
+                    (isReadOnly ? '' : '<button class="btn-editar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;margin-right:4px;">✏️</button>' +
+                    '<button class="btn-eliminar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;">🗑</button>') +
                     '</td>' +
                     '</tr>';
             }).join('');
 
-            tbody.querySelectorAll('.btn-editar-teso').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    editarMovimientoTeso(Number(this.dataset.idx));
+            if (!isReadOnly) {
+                tbody.querySelectorAll('.btn-editar-teso').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        editarMovimientoTeso(Number(this.dataset.idx));
+                    });
                 });
-            });
-            tbody.querySelectorAll('.btn-eliminar-teso').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    eliminarMovimientoTeso(Number(this.dataset.idx));
+                tbody.querySelectorAll('.btn-eliminar-teso').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        eliminarMovimientoTeso(Number(this.dataset.idx));
+                    });
                 });
-            });
+            }
         }
 
         var tesoEditIdx = -1;
@@ -1606,6 +1621,7 @@
 
         document.getElementById('formTesorería').addEventListener('submit', function (e) {
             e.preventDefault();
+            if (isReadOnly) { return; }
             var msg = document.getElementById('tesoMsg');
             msg.className = 'msg';
             msg.style.display = 'none';
@@ -1693,8 +1709,8 @@
             URL.revokeObjectURL(link.href);
         });
 
-        // Cargar tesorería al iniciar si el rol es Tesorero
-        if (sessionRole === 'Tesorero') {
+        // Cargar tesorería al iniciar si el usuario puede verla
+        if (sessionRole === 'Tesorero' || sessionRole === 'Presidente') {
             renderTablaTeso();
         }
 
