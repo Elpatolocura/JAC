@@ -994,6 +994,7 @@
             var container = document.getElementById('actasList');
             try {
                 var all = await getActas();
+                window._actasCache = all;
             } catch (e) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error al cargar actas: ' + e.message + '</p></div>';
                 return;
