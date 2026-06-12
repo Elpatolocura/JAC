@@ -234,6 +234,11 @@ async function saveSoporte(data) {
   }
 }
 
+async function getUsuarios() {
+  try { return await apiFetch('usuarios?select=*'); }
+  catch { return []; }
+}
+
 // ===== REUNIONES (videollamadas) =====
 
 async function getReuniones() {

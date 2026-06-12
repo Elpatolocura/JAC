@@ -1795,20 +1795,36 @@
             if (puedeCrearReuniones()) {
                 document.getElementById('crearReunionCard').style.display = 'block';
                 document.getElementById('solicitudesExternasCard').style.display = 'block';
-                // Cargar lista de miembros para invitar
+                // Cargar lista de miembros para invitar (registros + usuarios del barrio)
                 try {
-                    var todos = await getRegistros();
-                    var miembros = (todos || []).filter(function (r) { return r.barrio === sessionBarrio; });
+                    var todosReg = await getRegistros();
+                    var todosUsu = await getUsuarios();
+                    var miembrosReg = (todosReg || []).filter(function (r) { return r.barrio === sessionBarrio; });
+                    var miembrosUsu = (todosUsu || []).filter(function (u) { return u.barrio === sessionBarrio; });
                     var container = document.getElementById('reuInvitarLista');
-                    if (miembros.length === 0) {
-                        container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">No hay miembros registrados en este barrio</p>';
-                    } else {
-                        container.innerHTML = miembros.map(function (m) {
+                    var html = '';
+                    if (miembrosUsu.length > 0) {
+                        html += '<div style="font-weight:600;font-size:0.8rem;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">Directiva (Presidente, Secretario, Tesorero)</div>';
+                        html += miembrosUsu.map(function (u) {
+                            return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">' +
+                                '<input type="checkbox" class="reu-invitar-chk" value="' + u.username + '" data-nombre="' + u.name.replace(/"/g, '&quot;') + '"> ' +
+                                u.name + ' (' + u.role + ')' +
+                                '</label>';
+                        }).join('');
+                    }
+                    if (miembrosReg.length > 0) {
+                        html += '<div style="font-weight:600;font-size:0.8rem;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);margin:4px 0;">Afiliados</div>';
+                        html += miembrosReg.map(function (m) {
                             return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">' +
                                 '<input type="checkbox" class="reu-invitar-chk" value="' + m.cedula + '" data-nombre="' + (m.nombres + ' ' + m.apellidos).replace(/"/g, '&quot;') + '"> ' +
                                 m.nombres + ' ' + m.apellidos + ' (' + m.cedula + ')' +
                                 '</label>';
                         }).join('');
+                    }
+                    if (!html) {
+                        container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">No hay miembros registrados en este barrio</p>';
+                    } else {
+                        container.innerHTML = html;
                     }
                 } catch (e) {
                     document.getElementById('reuInvitarLista').innerHTML = '<p style="color:var(--red);">Error al cargar miembros</p>';
