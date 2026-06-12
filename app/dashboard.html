@@ -1874,7 +1874,15 @@
                     }
 
                     if (puedeUnirse) {
-                        html += '<button class="acta-card-btn" onclick="unirseReunion(' + r.id + ')">📹 Unirse</button>';
+                        // Verificar si ya tiene una asistencia abierta
+                        var tengoAsistenciaAbierta = (asistencia || []).find(function (a) {
+                            return a.reunion_id == r.id && a.participante_username === sessionUsername && !a.hora_salida;
+                        });
+                        if (tengoAsistenciaAbierta) {
+                            html += '<button class="acta-card-btn" onclick="finalizarParticipacion(' + r.id + ')">⏹ Finalizar participación</button>';
+                        } else {
+                            html += '<button class="acta-card-btn" onclick="unirseReunion(' + r.id + ')">📹 Unirse</button>';
+                        }
                     }
 
                     // Botón confirmar/rechazar para invitados
@@ -2030,20 +2038,19 @@
             renderReuniones().catch(function () {});
         }
 
-        // Unirse a reunión (Jitsi)
+        // Unirse a reunión (Jitsi - abre nueva ventana)
         async function unirseReunion(reuId) {
             try {
                 var reuniones = await getReuniones();
                 var r = (reuniones || []).find(function (x) { return x.id == reuId; });
                 if (!r) { alert('Reunión no encontrada'); return; }
 
-                // Actualizar estado a en_curso si es programada
                 if (r.estado === 'programada') {
                     await updateReunion(r.id, { estado: 'en_curso' });
                 }
 
-                // Registrar asistencia
-                var asisResult = await saveAsistencia({
+                // Registrar asistencia (hora_ingreso)
+                await saveAsistencia({
                     reunion_id: r.id,
                     participante_username: sessionUsername,
                     participante_cedula: sessionUsername || '',
@@ -2051,33 +2058,26 @@
                     rol: sessionRole,
                     hora_ingreso: new Date().toISOString(),
                 });
-                if (asisResult.ok) {
-                    var asistencias = await getAsistencia();
-                    var miAsistencia = (asistencias || []).find(function (a) {
-                        return a.reunion_id == r.id && a.participante_username === sessionUsername && !a.hora_salida;
-                    });
-                    if (miAsistencia) reuAsistenciaId = miAsistencia.id;
-                }
 
-                // Abrir Jitsi
-                document.getElementById('jitsiReunionTitulo').textContent = r.titulo;
-                document.getElementById('jitsiIframe').src = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false&config.startWithVideoMuted=false';
-                document.getElementById('modalJitsi').style.display = 'block';
+                // Abrir Jitsi en nueva ventana
+                var url = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false';
+                window.open(url, '_blank');
             } catch (e) {
                 alert('Error al unirse: ' + e.message);
             }
         }
 
-        // Salir de reunión
-        document.getElementById('btnSalirReunion').addEventListener('click', async function () {
-            if (reuAsistenciaId) {
-                await updateAsistencia(reuAsistenciaId, { hora_salida: new Date().toISOString() });
-                reuAsistenciaId = null;
+        // Finalizar participación (registrar hora_salida)
+        async function finalizarParticipacion(reuId) {
+            var asistencias = await getAsistencia();
+            var miAsistencia = (asistencias || []).find(function (a) {
+                return a.reunion_id == reuId && a.participante_username === sessionUsername && !a.hora_salida;
+            });
+            if (miAsistencia) {
+                await updateAsistencia(miAsistencia.id, { hora_salida: new Date().toISOString() });
+                renderReuniones().catch(function () {});
             }
-            document.getElementById('jitsiIframe').src = '';
-            document.getElementById('modalJitsi').style.display = 'none';
-            renderReuniones().catch(function () {});
-        });
+        }
 
         // Ver asistencia
         async function verAsistenciaReunion(reuId) {

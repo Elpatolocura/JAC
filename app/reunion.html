@@ -156,7 +156,7 @@
                 }
 
                 var cedula = document.getElementById('extCedula').value.trim();
-                var asisResult = await saveAsistencia({
+                await saveAsistencia({
                     reunion_id: r.id,
                     participante_username: '',
                     participante_cedula: cedula,
@@ -165,30 +165,12 @@
                     hora_ingreso: new Date().toISOString(),
                 });
 
-                if (asisResult.ok) {
-                    var asistencias = await getAsistencia();
-                    var miAsistencia = (asistencias || []).find(function (a) {
-                        return a.reunion_id == r.id && a.participante_cedula === cedula && !a.hora_salida;
-                    });
-                    if (miAsistencia) extAsistenciaId = miAsistencia.id;
-                }
-
-                document.getElementById('jitsiExtTitulo').textContent = r.titulo;
-                document.getElementById('jitsiExtIframe').src = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false&config.startWithVideoMuted=false';
-                document.getElementById('modalJitsiExt').style.display = 'block';
+                var url = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false';
+                window.open(url, '_blank');
             } catch (e) {
                 alert('Error: ' + e.message);
             }
         }
-
-        document.getElementById('btnSalirReunionExt').addEventListener('click', async function () {
-            if (extAsistenciaId) {
-                await updateAsistencia(extAsistenciaId, { hora_salida: new Date().toISOString() });
-                extAsistenciaId = null;
-            }
-            document.getElementById('jitsiExtIframe').src = '';
-            document.getElementById('modalJitsiExt').style.display = 'none';
-        });
     </script>
 </body>
 </html>
