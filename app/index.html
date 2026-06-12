@@ -81,12 +81,16 @@
             </div>
             <div class="form-group">
               <label for="regCiudad">Ciudad</label>
-              <input type="text" id="regCiudad" placeholder="Ej: Cartagena" required>
+              <select id="regCiudad" required>
+                <option value="">Cargando ciudades...</option>
+              </select>
             </div>
           </div>
           <div class="form-group">
             <label for="regBarrio">Barrio</label>
-            <input type="text" id="regBarrio" placeholder="Ej: El Progreso, Torices..." required>
+            <select id="regBarrio" required>
+              <option value="">Primero seleccioná una ciudad</option>
+            </select>
           </div>
           <button type="submit" class="btn-primary">Crear usuario</button>
           <div class="msg" id="regMsg"></div>
@@ -134,8 +138,59 @@
         });
 
         // ===== REGISTRO =====
+        async function cargarCiudades() {
+            var sel = document.getElementById('regCiudad');
+            sel.innerHTML = '<option value="">Cargando...</option>';
+            try {
+                var usuarios = await apiFetch('usuarios?select=ciudad&ciudad=neq.&order=ciudad.asc');
+                var registros = await apiFetch('registros?select=ciudad&ciudad=neq.&order=ciudad.asc');
+                var ciudades = {};
+                (usuarios || []).forEach(function (u) { if (u.ciudad) ciudades[u.ciudad] = true; });
+                (registros || []).forEach(function (r) { if (r.ciudad) ciudades[r.ciudad] = true; });
+                var lista = Object.keys(ciudades).sort();
+                if (lista.length === 0) {
+                    sel.innerHTML = '<option value="">No hay ciudades disponibles</option>';
+                } else {
+                    sel.innerHTML = '<option value="">Seleccioná una ciudad</option>' +
+                        lista.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+                }
+            } catch (e) {
+                sel.innerHTML = '<option value="">Error al cargar</option>';
+            }
+        }
+
+        async function cargarBarrios(ciudad) {
+            var sel = document.getElementById('regBarrio');
+            if (!ciudad) {
+                sel.innerHTML = '<option value="">Primero seleccioná una ciudad</option>';
+                return;
+            }
+            sel.innerHTML = '<option value="">Cargando...</option>';
+            try {
+                var usuarios = await apiFetch('usuarios?select=barrio&barrio=neq.&ciudad=eq.' + encodeURIComponent(ciudad) + '&order=barrio.asc');
+                var registros = await apiFetch('registros?select=barrio&barrio=neq.&ciudad=eq.' + encodeURIComponent(ciudad) + '&order=barrio.asc');
+                var barrios = {};
+                (usuarios || []).forEach(function (u) { if (u.barrio) barrios[u.barrio] = true; });
+                (registros || []).forEach(function (r) { if (r.barrio) barrios[r.barrio] = true; });
+                var lista = Object.keys(barrios).sort();
+                if (lista.length === 0) {
+                    sel.innerHTML = '<option value="">No hay barrios disponibles</option>';
+                } else {
+                    sel.innerHTML = '<option value="">Seleccioná un barrio</option>' +
+                        lista.map(function (b) { return '<option value="' + b + '">' + b + '</option>'; }).join('');
+                }
+            } catch (e) {
+                sel.innerHTML = '<option value="">Error al cargar</option>';
+            }
+        }
+
         document.getElementById('btnRegistro').addEventListener('click', function () {
             document.getElementById('modalRegistro').style.display = 'flex';
+            cargarCiudades();
+        });
+
+        document.getElementById('regCiudad').addEventListener('change', function () {
+            cargarBarrios(this.value);
         });
 
         document.getElementById('modalRegistro').addEventListener('click', function (e) {
@@ -155,7 +210,7 @@
                 codigo: document.getElementById('regCodigo').value.trim(),
                 name: document.getElementById('regName').value.trim(),
                 role: document.getElementById('regRole').value,
-                ciudad: document.getElementById('regCiudad').value.trim(),
+                ciudad: document.getElementById('regCiudad').value,
                 barrio: document.getElementById('regBarrio').value,
             };
 
