@@ -148,6 +148,35 @@
                     <p>No se encontró ningún afiliado con esa cédula en tu barrio</p>
                 </div>
             </div>
+
+            <!-- Buscar acta por número -->
+            <div class="card" style="margin-top:20px;">
+                <div class="card-title">📄 Consultar Acta</div>
+                <div class="form-group" style="margin:0;">
+                    <label for="buscarActaNum">N° de Acta</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="buscarActaNum" placeholder="Ej: 001" style="flex:1;">
+                        <button class="btn-primary" id="btnBuscarActa" style="width:auto;padding:8px 16px;font-size:0.85rem;margin:0;">🔍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="actaResultado" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>📄 Acta <span id="actaResultNum"></span></h4>
+                        <button class="btn-primary" id="btnVerActaCompleta" style="width:auto;padding:8px 20px;font-size:0.85rem;margin:0;">👁️ Ver acta completa</button>
+                    </div>
+                    <div id="actaResumen" style="padding:12px 0;font-size:0.9rem;"></div>
+                </div>
+            </div>
+
+            <div class="card" id="actaNoResultado" style="display:none;">
+                <div class="empty-state">
+                    <div class="empty-icon">📄</div>
+                    <p>No se encontró ningún acta con ese número en tu barrio</p>
+                </div>
+            </div>
         </section>
 
         <!-- TAB 4: Actas -->
@@ -212,12 +241,6 @@
                 </form>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h4>📋 Actas registradas</h4>
-                </div>
-                <div id="actasList"></div>
-            </div>
         </section>
     </div>
 
@@ -239,6 +262,14 @@
             <span class="tab-label">Actas</span>
         </button>
     </nav>
+
+    <!-- Modal ver acta completa -->
+    <div id="modalActaCompleta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:700px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;max-height:90vh;overflow-y:auto;">
+        <button onclick="document.getElementById('modalActaCompleta').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div id="actaCompletaContent"></div>
+      </div>
+    </div>
 
     <!-- Modal solicitud de eliminación -->
     <div id="modalSolicitudElim" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
@@ -594,7 +625,7 @@
                     renderTable().catch(function () {});
                 }
                 if (target === 'tab-actas') {
-                    cargarActas().catch(function () {});
+                    document.getElementById('actaNumero').value = '';
                 }
             });
         });
@@ -880,34 +911,63 @@
         });
 
         // ===== ACTAS =====
-        var actasCache = [];
+        var actaSearchCache = null;
 
-        async function cargarActas() {
-            actasCache = await getActas(sessionBarrio);
-            var container = document.getElementById('actasList');
-            if (actasCache.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>No hay actas registradas</p></div>';
+        function mostrarActaCompleta(a) {
+            var fotosHtml = '';
+            if (a.imagenes) {
+                var urls = a.imagenes.split(',');
+                fotosHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
+                    urls.map(function (u) {
+                        return '<a href="' + u.trim() + '" target="_blank"><img src="' + u.trim() + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>';
+                    }).join('') + '</div>';
+            }
+            document.getElementById('actaCompletaContent').innerHTML =
+                '<div style="font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:4px;">ACTA DE REUNIÓN N° ' + a.numero + '</div>' +
+                '<div style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">' + a.fecha + ' | ' + a.hora_inicio + ' - ' + a.hora_fin + ' | ' + a.lugar + ' | ' + a.tipo + '</div>' +
+                '<div style="border-top:2px solid var(--blue);margin-bottom:12px;"></div>' +
+                '<div style="margin-bottom:12px;"><strong>Orden del día:</strong><br>' + a.orden_dia.replace(/\n/g, '<br>') + '</div>' +
+                '<div style="margin-bottom:12px;"><strong>Desarrollo:</strong><br>' + a.desarrollo.replace(/\n/g, '<br>') + '</div>' +
+                (a.acuerdos ? '<div style="margin-bottom:12px;"><strong>Acuerdos y compromisos:</strong><br>' + a.acuerdos.replace(/\n/g, '<br>') + '</div>' : '') +
+                (fotosHtml ? '<div><strong>Evidencias:</strong>' + fotosHtml + '</div>' : '') +
+                '<div style="border-top:1px solid var(--border);margin-top:16px;padding-top:12px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Creado por: ' + a.creado_por + ' · ' + a.barrio + '</div>';
+            document.getElementById('modalActaCompleta').style.display = 'flex';
+        }
+
+        // Búsqueda de acta por número
+        document.getElementById('btnBuscarActa').addEventListener('click', async function () {
+            var num = document.getElementById('buscarActaNum').value.trim();
+            document.getElementById('actaResultado').style.display = 'none';
+            document.getElementById('actaNoResultado').style.display = 'none';
+            if (!num) return;
+
+            var all = await getActas(sessionBarrio);
+            var acta = (all || []).find(function (a) {
+                return a.numero === num && a.barrio === sessionBarrio;
+            });
+
+            if (!acta) {
+                document.getElementById('actaNoResultado').style.display = 'block';
+                actaSearchCache = null;
                 return;
             }
-            container.innerHTML = actasCache.map(function (a) {
-                var fotos = '';
-                if (a.imagenes) {
-                    var urls = a.imagenes.split(',');
-                    fotos = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">' +
-                        urls.map(function (u) {
-                            return '<a href="' + u.trim() + '" target="_blank"><img src="' + u.trim() + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>';
-                        }).join('') + '</div>';
-                }
-                return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:0.9rem;">' +
-                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-                    '<strong>Acta N° ' + a.numero + '</strong>' +
-                    '<span style="font-size:0.8rem;color:var(--text-muted);">' + a.fecha + ' | ' + a.hora_inicio + ' - ' + a.hora_fin + '</span>' +
-                    '</div>' +
-                    '<div style="color:var(--text-muted);font-size:0.85rem;">' + a.lugar + ' · ' + a.tipo + '</div>' +
-                    fotos +
-                    '</div>';
-            }).join('');
-        }
+
+            actaSearchCache = acta;
+            document.getElementById('actaResultNum').textContent = 'N° ' + acta.numero;
+            document.getElementById('actaResumen').innerHTML =
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+                '<div><strong>Fecha:</strong> ' + acta.fecha + '</div>' +
+                '<div><strong>Hora:</strong> ' + acta.hora_inicio + ' - ' + acta.hora_fin + '</div>' +
+                '<div><strong>Lugar:</strong> ' + acta.lugar + '</div>' +
+                '<div><strong>Tipo:</strong> ' + acta.tipo + '</div>' +
+                '</div>';
+            document.getElementById('actaResultado').style.display = 'block';
+            document.getElementById('actaNoResultado').style.display = 'none';
+        });
+
+        document.getElementById('btnVerActaCompleta').addEventListener('click', function () {
+            if (actaSearchCache) mostrarActaCompleta(actaSearchCache);
+        });
 
         // Vista previa de fotos
         document.getElementById('actaFotos').addEventListener('change', function () {
@@ -1191,7 +1251,6 @@
 
         // ===== INIT =====
         renderTable().catch(function () {});
-        cargarActas().catch(function () {});
     </script>
 </body>
 </html>
