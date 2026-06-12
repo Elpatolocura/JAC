@@ -125,7 +125,8 @@
                     var ahora = new Date();
                     var fechaReunion = new Date(reu.fecha + 'T' + reu.hora_inicio);
                     var finReunion = new Date(fechaReunion.getTime() + reu.duracion_minutos * 60000);
-                    var puedeUnirse = e.estado === 'aprobado' && ahora >= fechaReunion && ahora <= finReunion;
+                    var quinceAntes = new Date(fechaReunion.getTime() - 15 * 60000);
+                    var puedeUnirse = e.estado === 'aprobado' && ahora >= quinceAntes && ahora <= finReunion;
                     var estadoTexto = e.estado === 'pendiente' ? '⏳ Pendiente de aprobación' : e.estado === 'aprobado' ? '✅ Aprobado' : '❌ Rechazado';
 
                     html += '<div class="externo-card">' +

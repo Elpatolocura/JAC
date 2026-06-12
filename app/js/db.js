@@ -236,7 +236,7 @@ async function saveSoporte(data) {
 
 async function getUsuarios() {
   try { return await apiFetch('usuarios?select=*'); }
-  catch { return []; }
+  catch (e) { console.error('getUsuarios error:', e); return []; }
 }
 
 // ===== REUNIONES (videollamadas) =====

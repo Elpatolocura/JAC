@@ -1856,8 +1856,11 @@
                     var fechaReunion = new Date(r.fecha + 'T' + r.hora_inicio);
                     var finReunion = new Date(fechaReunion.getTime() + r.duracion_minutos * 60000);
                     var reunionTerminada = ahora.getTime() > finReunion.getTime();
+                    // Solo visible desde 15 min antes de la hora de inicio
+                    var quinceAntes = new Date(fechaReunion.getTime() - 15 * 60000);
+                    var puedeIngresar = ahora.getTime() >= quinceAntes.getTime();
 
-                    if (reunionTerminada) {
+                    if (reunionTerminada || !puedeIngresar) {
                         puedeUnirse = false;
                     } else {
                         var miInvitacion = (invitaciones || []).find(function (i) { return i.reunion_id == r.id && i.invitado_username === sessionUsername; });

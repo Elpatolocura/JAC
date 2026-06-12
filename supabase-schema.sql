@@ -43,6 +43,11 @@ CREATE INDEX IF NOT EXISTS idx_registros_barrio ON registros (barrio);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cedula TEXT DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT TRUE;
+
+-- RLS para usuarios (necesario para getUsuarios)
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_select_usuarios ON usuarios;
+CREATE POLICY anon_select_usuarios ON usuarios FOR SELECT USING (true);
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
