@@ -326,7 +326,7 @@
             <span class="tab-icon">📝</span>
             <span class="tab-label">Inscripción</span>
         </button>
-        <button class="tab-item" data-tab="tab-consultar">
+        <button class="tab-item" data-tab="tab-consultar" id="tabBtnConsultar">
             <span class="tab-icon">📋</span>
             <span class="tab-label">Consultar</span>
         </button>
@@ -552,11 +552,11 @@
                 document.getElementById('tabBtnInscripcion').style.display = 'none';
                 document.getElementById('tabBtnCertificados').style.display = 'none';
                 document.getElementById('tabBtnActas').style.display = 'none';
-                document.querySelector('.tab-item[data-tab="tab-consultar"]').classList.add('active');
+                document.getElementById('tabBtnConsultar').style.display = 'none';
+                document.querySelector('.tab-item[data-tab="tab-tesoreria"]').classList.add('active');
                 document.getElementById('tab-inscripcion').classList.remove('active');
-                document.getElementById('tab-consultar').classList.add('active');
-                document.getElementById('pageTitle').textContent = 'Consultar';
-                document.getElementById('buscarCedula').value = '';
+                document.getElementById('tab-tesoreria').classList.add('active');
+                document.getElementById('pageTitle').textContent = 'Tesorería';
             } else {
                 document.getElementById('tabBtnTesorería').style.display = 'none';
                 document.getElementById('tabBtnInscripcion').classList.add('active');
