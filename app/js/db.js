@@ -164,9 +164,9 @@ async function saveRegistro(campos) {
   }
 }
 
-async function getActas(barrio) {
+async function getActas() {
   try {
-    return await apiFetch('actas?barrio=eq.' + encodeURIComponent(barrio) + '&order=created_at.desc&select=*');
+    return await apiFetch('actas?order=created_at.desc&select=*');
   } catch {
     return [];
   }

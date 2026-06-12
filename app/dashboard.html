@@ -991,22 +991,20 @@
         }
 
         async function renderActasList() {
-            var all = await getActas(sessionBarrio);
-            var list = (all || []).filter(function (a) {
-                if (a.ciudad) return a.ciudad === sessionCiudad && a.barrio === sessionBarrio;
-                return a.barrio === sessionBarrio;
-            });
             var container = document.getElementById('actasList');
-            document.getElementById('actasCount').textContent = list.length + ' acta' + (list.length !== 1 ? 's' : '');
-            if (list.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Aún no hay actas registradas</p><p style="font-size:0.85rem;margin-top:4px;">Usá la pestaña Actas para crear la primera.</p></div>';
+            try {
+                var all = await getActas();
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error al cargar actas: ' + e.message + '</p></div>';
                 return;
             }
-            // Guardar URLs de fotos para el carrusel
-            list.forEach(function (a) {
-                if (a.imagenes) window['_actaFotos_' + a.id] = a.imagenes.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
+            if (!all || !Array.isArray(all)) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Aún no hay actas registradas</p></div>';
+                return;
+            }
+            var list = all.filter(function (a) {
+                return a.barrio === sessionBarrio;
             });
-            container.innerHTML = list.map(function (a) {
                 var badge = '';
                 var tipoCls = a.tipo ? a.tipo.toLowerCase().replace(/\s+/g, '') : '';
                 if (a.tipo) badge = '<span class="acta-card-badge ' + tipoCls + '">' + a.tipo + '</span>';
@@ -1067,10 +1065,10 @@
             document.getElementById('actaNoResultado').style.display = 'none';
             if (!num) return;
 
-            window._actasCache = await getActas(sessionBarrio);
-            var all = window._actasCache;
-            var acta = (all || []).find(function (a) {
-                return a.numero === num && a.barrio === sessionBarrio;
+            window._actasCache = await getActas();
+            var all = (window._actasCache || []).filter(function (a) { return a.barrio === sessionBarrio; });
+            var acta = all.find(function (a) {
+                return a.numero === num;
             });
 
             if (!acta) {
@@ -1179,7 +1177,7 @@
             }
 
             // Validar número de acta único en el barrio
-            var existentes = await getActas(sessionBarrio);
+            var existentes = await getActas();
             var duplicado = (existentes || []).find(function (a) { return a.numero === campos.numero; });
             if (duplicado) {
                 msg.textContent = 'Ya existe un acta con el número ' + campos.numero + ' en ' + sessionBarrio;
