@@ -177,6 +177,24 @@ async function checkCedulaDuplicada(cedula) {
   }
 }
 
+async function saveSoporte(data) {
+  try {
+    await apiFetch('soporte', {
+      method: 'POST',
+      body: JSON.stringify({
+        asunto: data.asunto,
+        mensaje: data.mensaje,
+        usuario: data.usuario || '',
+        barrio: data.barrio || '',
+        created_at: new Date().toISOString(),
+      }),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function saveSolicitudEliminacion(data) {
   try {
     await apiFetch('solicitudes_eliminacion', {

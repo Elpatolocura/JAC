@@ -93,3 +93,21 @@ DROP POLICY IF EXISTS anon_insert_solicitudes ON solicitudes_eliminacion;
 CREATE POLICY anon_insert_solicitudes ON solicitudes_eliminacion FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS anon_select_solicitudes ON solicitudes_eliminacion;
 CREATE POLICY anon_select_solicitudes ON solicitudes_eliminacion FOR SELECT USING (true);
+
+-- ============================================
+-- Tabla de soporte/mensajes
+-- ============================================
+CREATE TABLE IF NOT EXISTS soporte (
+  id BIGSERIAL PRIMARY KEY,
+  asunto TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  usuario TEXT DEFAULT '',
+  barrio TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE soporte ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_soporte ON soporte;
+CREATE POLICY anon_insert_soporte ON soporte FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_soporte ON soporte;
+CREATE POLICY anon_select_soporte ON soporte FOR SELECT USING (true);

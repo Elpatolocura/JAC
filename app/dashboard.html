@@ -241,6 +241,28 @@
       </div>
     </div>
 
+    <!-- Modal soporte -->
+    <div id="modalSoporte" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;">
+        <button onclick="document.getElementById('modalSoporte').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div style="font-size:2rem;text-align:center;margin-bottom:4px;">💬</div>
+        <h3 style="text-align:center;margin-bottom:4px;">Soporte</h3>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">Envianos tu consulta o reporte de error</p>
+        <form id="formSoporte">
+          <div class="form-group">
+            <label for="sopAsunto">Asunto</label>
+            <input type="text" id="sopAsunto" placeholder="Ej: Error al inscribir" required>
+          </div>
+          <div class="form-group">
+            <label for="sopMensaje">Mensaje</label>
+            <textarea id="sopMensaje" placeholder="Describí el problema o consulta..." style="min-height:120px;" required></textarea>
+          </div>
+          <button type="submit" class="btn-primary">📤 Enviar mensaje</button>
+          <div class="msg" id="sopMsg"></div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal política de seguridad -->
     <div id="modalPoliticas" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
       <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;max-height:90vh;overflow-y:auto;">
@@ -343,13 +365,59 @@
             document.getElementById('userDropdown').classList.remove('show');
         });
 
+        // ===== SOPORTE =====
+        document.getElementById('formSoporte').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msg = document.getElementById('sopMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            const asunto = document.getElementById('sopAsunto').value.trim();
+            const mensaje = document.getElementById('sopMensaje').value.trim();
+
+            if (!asunto || !mensaje) {
+                msg.textContent = 'Completá todos los campos';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            const result = await saveSoporte({
+                asunto: asunto,
+                mensaje: mensaje,
+                usuario: sessionName + ' (' + sessionUsername + ')',
+                barrio: sessionBarrio,
+            });
+
+            if (result.ok) {
+                msg.textContent = '✅ Mensaje enviado con éxito. Te responderemos pronto.';
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                this.reset();
+                setTimeout(function () {
+                    document.getElementById('modalSoporte').style.display = 'none';
+                    msg.style.display = 'none';
+                }, 2000);
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '📤 Enviar mensaje';
+            }
+        });
+
         document.getElementById('btnPoliticas').addEventListener('click', function () {
             document.getElementById('userDropdown').classList.remove('show');
             document.getElementById('modalPoliticas').style.display = 'flex';
         });
         document.getElementById('btnSoporte').addEventListener('click', function () {
             document.getElementById('userDropdown').classList.remove('show');
-            window.open('mailto:radatova18@gmail.com?subject=' + encodeURIComponent('[JAC] Solicitud de soporte'), '_blank');
+            document.getElementById('modalSoporte').style.display = 'flex';
         });
 
         // ===== LOGOUT =====
