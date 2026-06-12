@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAC - Acceder a Reunión</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .externo-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .externo-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; }
+        .btn-unirse {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        .btn-unirse:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-unirse:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .estado-pendiente { color: #d97706; font-weight: 600; }
+        .estado-aprobado { color: #059669; font-weight: 600; }
+    </style>
+</head>
+<body class="login-body">
+    <div class="login-container" style="min-height:auto;">
+        <div class="login-brand" style="min-height:140px;">
+            <div class="icon">📹</div>
+            <h1>JAC</h1>
+            <p>Acceso a reuniones virtuales</p>
+        </div>
+        <div class="login-form-wrap">
+            <h2>Ingresar a reunión</h2>
+            <p class="sub">Ingresá tu número de cédula para acceder a tus reuniones</p>
+            <form id="formAccesoExterno">
+                <div class="form-group">
+                    <label for="extCedula">N° de Cédula</label>
+                    <input type="text" id="extCedula" placeholder="Ej: 12345678" required autofocus>
+                </div>
+                <button type="submit" class="btn-primary">🔍 Consultar reuniones</button>
+                <div class="msg" id="extMsg"></div>
+            </form>
+            <div id="extResultado" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:20px;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Jitsi -->
+    <div id="modalJitsiExt" style="display:none;position:fixed;inset:0;z-index:1001;background:white;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--blue);color:white;">
+            <span id="jitsiExtTitulo" style="font-weight:600;">Reunión</span>
+            <button id="btnSalirReunionExt" style="background:var(--red);color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;">✕ Salir</button>
+        </div>
+        <iframe id="jitsiExtIframe" style="width:100%;height:calc(100vh - 48px);border:none;" allow="camera;microphone;fullscreen;display-capture" src=""></iframe>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/db.js"></script>
+    <script>
+        var extAsistenciaId = null;
+
+        document.getElementById('formAccesoExterno').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('extMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            var cedula = document.getElementById('extCedula').value.trim();
+            if (!cedula) {
+                msg.textContent = 'Ingresá tu número de cédula';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            var btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Consultando...';
+
+            try {
+                var externos = await getInvitadosExternos();
+                var reuniones = await getReuniones();
+
+                var misExternos = (externos || []).filter(function (e) { return e.cedula === cedula; });
+
+                if (misExternos.length === 0) {
+                    msg.textContent = 'No se encontraron reuniones para esta cédula. Si fuiste invitado, verificá que el creador haya registrado correctamente tu cédula.';
+                    msg.className = 'msg error';
+                    msg.style.display = 'block';
+                    document.getElementById('extResultado').style.display = 'none';
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Consultar reuniones';
+                    return;
+                }
+
+                var html = '<h3 style="margin-bottom:16px;">Tus reuniones</h3>';
+                misExternos.forEach(function (e) {
+                    var reu = (reuniones || []).find(function (r) { return r.id == e.reunion_id; });
+                    if (!reu) return;
+                    var ahora = new Date();
+                    var fechaReunion = new Date(reu.fecha + 'T' + reu.hora_inicio);
+                    var finReunion = new Date(fechaReunion.getTime() + reu.duracion_minutos * 60000);
+                    var puedeUnirse = e.estado === 'aprobado' && ahora >= fechaReunion && ahora <= finReunion;
+
+                    html += '<div class="externo-card">' +
+                        '<h4>' + reu.titulo + '</h4>' +
+                        '<p style="font-size:0.9rem;color:var(--text-muted);">' +
+                        reu.fecha + ' · ' + reu.hora_inicio + ' · ' + reu.duracion_minutos + 'min</p>' +
+                        '<p style="font-size:0.9rem;margin-top:8px;">Estado: ' +
+                        (e.estado === 'pendiente' ? '<span class="estado-pendiente">⏳ Pendiente de aprobación</span>' :
+                         e.estado === 'aprobado' ? '<span class="estado-aprobado">✅ Aprobado</span>' :
+                         '<span style="color:#dc2626;">❌ Rechazado</span>') +
+                        '</p>';
+
+                    if (puedeUnirse) {
+                        html += '<button class="btn-unirse" onclick="unirseReunionExt(' + reu.id + ')">📹 Unirse a videollamada</button>';
+                    } else if (e.estado === 'pendiente') {
+                        html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;">Esperá a que el creador de la reunión apruebe tu ingreso</p>';
+                    } else if (e.estado === 'aprobado' && ahora < fechaReunion) {
+                        html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;">La reunión aún no ha comenzado</p>';
+                    } else if (e.estado === 'aprobado' && ahora > finReunion) {
+                        html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;">La reunión ya finalizó</p>';
+                    }
+                    html += '</div>';
+                });
+
+                document.getElementById('extResultado').innerHTML = html;
+                document.getElementById('extResultado').style.display = 'block';
+                msg.style.display = 'none';
+            } catch (err) {
+                msg.textContent = 'Error: ' + err.message;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+            }
+            btn.disabled = false;
+            btn.textContent = '🔍 Consultar reuniones';
+        });
+
+        async function unirseReunionExt(reuId) {
+            try {
+                var reuniones = await getReuniones();
+                var r = (reuniones || []).find(function (x) { return x.id == reuId; });
+                if (!r) { alert('Reunión no encontrada'); return; }
+
+                if (r.estado === 'programada') {
+                    await updateReunion(r.id, { estado: 'en_curso' });
+                }
+
+                var cedula = document.getElementById('extCedula').value.trim();
+                var asisResult = await saveAsistencia({
+                    reunion_id: r.id,
+                    participante_username: '',
+                    participante_cedula: cedula,
+                    participante_nombre: 'Externo (' + cedula + ')',
+                    rol: 'externo',
+                    hora_ingreso: new Date().toISOString(),
+                });
+
+                if (asisResult.ok) {
+                    var asistencias = await getAsistencia();
+                    var miAsistencia = (asistencias || []).find(function (a) {
+                        return a.reunion_id == r.id && a.participante_cedula === cedula && !a.hora_salida;
+                    });
+                    if (miAsistencia) extAsistenciaId = miAsistencia.id;
+                }
+
+                document.getElementById('jitsiExtTitulo').textContent = r.titulo;
+                document.getElementById('jitsiExtIframe').src = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false&config.startWithVideoMuted=false';
+                document.getElementById('modalJitsiExt').style.display = 'block';
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        document.getElementById('btnSalirReunionExt').addEventListener('click', async function () {
+            if (extAsistenciaId) {
+                await updateAsistencia(extAsistenciaId, { hora_salida: new Date().toISOString() });
+                extAsistenciaId = null;
+            }
+            document.getElementById('jitsiExtIframe').src = '';
+            document.getElementById('modalJitsiExt').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

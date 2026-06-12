@@ -234,6 +234,99 @@ async function saveSoporte(data) {
   }
 }
 
+// ===== REUNIONES (videollamadas) =====
+
+async function getReuniones() {
+  try { return await apiFetch('reuniones?order=created_at.desc&select=*'); }
+  catch { return []; }
+}
+
+async function saveReunion(data) {
+  try {
+    await apiFetch('reuniones', { method: 'POST', body: JSON.stringify(data) });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function updateReunion(id, data) {
+  try {
+    await apiFetch('reuniones?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+// Invitaciones
+async function getInvitaciones() {
+  try { return await apiFetch('invitaciones_reunion?order=created_at.desc&select=*'); }
+  catch { return []; }
+}
+
+async function saveInvitacion(data) {
+  try {
+    await apiFetch('invitaciones_reunion', { method: 'POST', body: JSON.stringify(data) });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function updateInvitacion(id, data) {
+  try {
+    await apiFetch('invitaciones_reunion?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+// Invitados externos
+async function getInvitadosExternos() {
+  try { return await apiFetch('invitados_externos?order=created_at.desc&select=*'); }
+  catch { return []; }
+}
+
+async function saveInvitadoExterno(data) {
+  try {
+    await apiFetch('invitados_externos', { method: 'POST', body: JSON.stringify(data) });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function updateInvitadoExterno(id, data) {
+  try {
+    await apiFetch('invitados_externos?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+// Asistencia
+async function getAsistencia() {
+  try { return await apiFetch('asistencia_reuniones?order=hora_ingreso.asc&select=*'); }
+  catch { return []; }
+}
+
+async function saveAsistencia(data) {
+  try {
+    await apiFetch('asistencia_reuniones', { method: 'POST', body: JSON.stringify(data) });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function updateAsistencia(id, data) {
+  try {
+    await apiFetch('asistencia_reuniones?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
 async function saveSolicitudEliminacion(data) {
   try {
     await apiFetch('solicitudes_eliminacion', {

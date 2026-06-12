@@ -151,3 +151,93 @@ ALTER TABLE actas ADD CONSTRAINT actas_numero_barrio_unique UNIQUE (numero, barr
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('evidencias', 'evidencias', true) ON CONFLICT DO NOTHING;
 -- CREATE POLICY anon_select_evidencias ON storage.objects FOR SELECT USING (bucket_id = 'evidencias');
 -- CREATE POLICY anon_insert_evidencias ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'evidencias');
+
+-- ============================================
+-- Tabla de reuniones / videollamadas
+-- ============================================
+CREATE TABLE IF NOT EXISTS reuniones (
+  id BIGSERIAL PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  fecha TEXT NOT NULL,
+  hora_inicio TEXT NOT NULL,
+  duracion_minutos INTEGER DEFAULT 60,
+  sala_nombre TEXT UNIQUE NOT NULL,
+  creado_por TEXT NOT NULL,
+  creador_nombre TEXT DEFAULT '',
+  barrio TEXT NOT NULL,
+  ciudad TEXT DEFAULT '',
+  estado TEXT DEFAULT 'programada' CHECK (estado IN ('programada','en_curso','finalizada')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE reuniones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_reuniones ON reuniones;
+CREATE POLICY anon_insert_reuniones ON reuniones FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_reuniones ON reuniones;
+CREATE POLICY anon_select_reuniones ON reuniones FOR SELECT USING (true);
+DROP POLICY IF EXISTS anon_update_reuniones ON reuniones;
+CREATE POLICY anon_update_reuniones ON reuniones FOR UPDATE USING (true);
+DROP POLICY IF EXISTS anon_delete_reuniones ON reuniones;
+CREATE POLICY anon_delete_reuniones ON reuniones FOR DELETE USING (true);
+
+-- ============================================
+-- Tabla de invitaciones a reuniones (miembros internos)
+-- ============================================
+CREATE TABLE IF NOT EXISTS invitaciones_reunion (
+  id BIGSERIAL PRIMARY KEY,
+  reunion_id BIGINT NOT NULL REFERENCES reuniones(id) ON DELETE CASCADE,
+  invitado_username TEXT NOT NULL,
+  invitado_nombre TEXT DEFAULT '',
+  estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','confirmada','rechazada')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE invitaciones_reunion ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_invitaciones ON invitaciones_reunion;
+CREATE POLICY anon_insert_invitaciones ON invitaciones_reunion FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_invitaciones ON invitaciones_reunion;
+CREATE POLICY anon_select_invitaciones ON invitaciones_reunion FOR SELECT USING (true);
+DROP POLICY IF EXISTS anon_update_invitaciones ON invitaciones_reunion;
+CREATE POLICY anon_update_invitaciones ON invitaciones_reunion FOR UPDATE USING (true);
+
+-- ============================================
+-- Tabla de invitados externos por cédula
+-- ============================================
+CREATE TABLE IF NOT EXISTS invitados_externos (
+  id BIGSERIAL PRIMARY KEY,
+  reunion_id BIGINT NOT NULL REFERENCES reuniones(id) ON DELETE CASCADE,
+  cedula TEXT NOT NULL,
+  nombre TEXT DEFAULT '',
+  estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobado','rechazado')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE invitados_externos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_externos ON invitados_externos;
+CREATE POLICY anon_insert_externos ON invitados_externos FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_externos ON invitados_externos;
+CREATE POLICY anon_select_externos ON invitados_externos FOR SELECT USING (true);
+DROP POLICY IF EXISTS anon_update_externos ON invitados_externos;
+CREATE POLICY anon_update_externos ON invitados_externos FOR UPDATE USING (true);
+
+-- ============================================
+-- Tabla de asistencia a reuniones (auditoría)
+-- ============================================
+CREATE TABLE IF NOT EXISTS asistencia_reuniones (
+  id BIGSERIAL PRIMARY KEY,
+  reunion_id BIGINT NOT NULL REFERENCES reuniones(id) ON DELETE CASCADE,
+  participante_username TEXT DEFAULT '',
+  participante_cedula TEXT DEFAULT '',
+  participante_nombre TEXT DEFAULT '',
+  rol TEXT NOT NULL,
+  hora_ingreso TIMESTAMPTZ DEFAULT NOW(),
+  hora_salida TIMESTAMPTZ
+);
+
+ALTER TABLE asistencia_reuniones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_asistencia ON asistencia_reuniones;
+CREATE POLICY anon_insert_asistencia ON asistencia_reuniones FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_asistencia ON asistencia_reuniones;
+CREATE POLICY anon_select_asistencia ON asistencia_reuniones FOR SELECT USING (true);
+DROP POLICY IF EXISTS anon_update_asistencia ON asistencia_reuniones;
+CREATE POLICY anon_update_asistencia ON asistencia_reuniones FOR UPDATE USING (true);

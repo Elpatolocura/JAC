@@ -319,6 +319,55 @@
                 </div>
             </div>
         </section>
+
+        <!-- TAB 6: Reuniones / Videollamadas -->
+        <section class="page" id="tab-reuniones">
+            <div class="card" id="crearReunionCard">
+                <div class="card-title">📅 Crear Reunión</div>
+                <form id="formReunion">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reuTitulo">Título</label>
+                            <input type="text" id="reuTitulo" placeholder="Ej: Asamblea General" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reuFecha">Fecha</label>
+                            <input type="date" id="reuFecha" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reuHora">Hora de inicio</label>
+                            <input type="time" id="reuHora" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reuDuracion">Duración (minutos)</label>
+                            <input type="number" id="reuDuracion" value="60" min="15" max="360" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Invitar miembros del barrio</label>
+                        <div id="reuInvitarLista" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:0.85rem;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reuExternos">Cédulas de externos (una por línea)</label>
+                        <textarea id="reuExternos" placeholder="12345678&#10;87654321" style="min-height:60px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">📅 Crear Reunión</button>
+                    <div class="msg" id="reuMsg"></div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Reuniones</div>
+                <div id="reunionesList"><p style="color:var(--text-muted);">Cargando...</p></div>
+            </div>
+
+            <div class="card" id="solicitudesExternasCard">
+                <div class="card-title">👤 Solicitudes de ingreso (externos)</div>
+                <div id="solicitudesExternasList"><p style="color:var(--text-muted);">No hay solicitudes pendientes</p></div>
+            </div>
+        </section>
     </div>
 
     <nav class="tab-bar" id="tabBar">
@@ -342,7 +391,19 @@
             <span class="tab-icon">💰</span>
             <span class="tab-label">Tesorería</span>
         </button>
+        <button class="tab-item" data-tab="tab-reuniones" id="tabBtnReuniones">
+            <span class="tab-icon">📅</span>
+            <span class="tab-label">Reuniones</span>
+        </button>
     </nav>
+    <!-- Modal videollamada Jitsi -->
+    <div id="modalJitsi" style="display:none;position:fixed;inset:0;z-index:1001;background:white;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--blue);color:white;">
+            <span id="jitsiReunionTitulo" style="font-weight:600;">Reunión</span>
+            <button id="btnSalirReunion" style="background:var(--red);color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;">✕ Salir</button>
+        </div>
+        <iframe id="jitsiIframe" style="width:100%;height:calc(100vh - 48px);border:none;" allow="camera;microphone;fullscreen;display-capture" src=""></iframe>
+    </div>
 
     <!-- Modal ver acta completa -->
     <div id="modalActaCompleta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
@@ -515,6 +576,7 @@
             var sessionUsername = '';
             var sessionRegistroId = '';
             var sessionName = '';
+            var sessionCedula = '';
             var isReadOnly = false;
         (function () {
             const sessionData = localStorage.getItem('jac_session');
@@ -531,6 +593,7 @@
             sessionUsername = session.username || '';
             sessionRegistroId = session.registroId || '';
             sessionName = session.name || '';
+            sessionCedula = session.cedula || session.username || '';
 
 
 
@@ -561,6 +624,7 @@
                 document.getElementById('tabBtnCertificados').style.display = 'none';
                 document.getElementById('tabBtnActas').style.display = 'none';
                 document.getElementById('tabBtnConsultar').style.display = 'none';
+                document.getElementById('tabBtnReuniones').style.display = 'none';
                 document.querySelector('.tab-item[data-tab="tab-tesoreria"]').classList.add('active');
                 document.getElementById('tab-inscripcion').classList.remove('active');
                 document.getElementById('tab-tesoreria').classList.add('active');
@@ -713,6 +777,7 @@
             'tab-certificados': document.getElementById('tab-certificados'),
             'tab-actas': document.getElementById('tab-actas'),
             'tab-tesoreria': document.getElementById('tab-tesoreria'),
+            'tab-reuniones': document.getElementById('tab-reuniones'),
         };
         const titles = {
             'tab-inscripcion': 'Inscripción',
@@ -720,6 +785,7 @@
             'tab-certificados': 'Certificados',
             'tab-actas': 'Actas',
             'tab-tesoreria': 'Tesorería',
+            'tab-reuniones': 'Reuniones',
         };
 
         tabItems.forEach(function (btn) {
@@ -743,6 +809,9 @@
                 }
                 if (target === 'tab-tesoreria') {
                     renderTablaTeso();
+                }
+                if (target === 'tab-reuniones') {
+                    renderReuniones();
                 }
             });
         });
@@ -1712,6 +1781,347 @@
         // Cargar tesorería al iniciar si el usuario puede verla
         if (sessionRole === 'Tesorero' || sessionRole === 'Presidente') {
             renderTablaTeso();
+        }
+
+        // ===== REUNIONES =====
+        var reuAsistenciaId = null;
+        var reuPollInterval = null;
+
+        function puedeCrearReuniones() {
+            return sessionRole === 'Presidente' || sessionRole === 'Secretario';
+        }
+
+        async function renderReuniones() {
+            if (puedeCrearReuniones()) {
+                document.getElementById('crearReunionCard').style.display = 'block';
+                document.getElementById('solicitudesExternasCard').style.display = 'block';
+                // Cargar lista de miembros para invitar
+                try {
+                    var todos = await getRegistros();
+                    var miembros = (todos || []).filter(function (r) { return r.barrio === sessionBarrio; });
+                    var container = document.getElementById('reuInvitarLista');
+                    if (miembros.length === 0) {
+                        container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">No hay miembros registrados en este barrio</p>';
+                    } else {
+                        container.innerHTML = miembros.map(function (m) {
+                            return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">' +
+                                '<input type="checkbox" class="reu-invitar-chk" value="' + m.cedula + '" data-nombre="' + (m.nombres + ' ' + m.apellidos).replace(/"/g, '&quot;') + '"> ' +
+                                m.nombres + ' ' + m.apellidos + ' (' + m.cedula + ')' +
+                                '</label>';
+                        }).join('');
+                    }
+                } catch (e) {
+                    document.getElementById('reuInvitarLista').innerHTML = '<p style="color:var(--red);">Error al cargar miembros</p>';
+                }
+            } else {
+                document.getElementById('crearReunionCard').style.display = 'none';
+                document.getElementById('solicitudesExternasCard').style.display = 'none';
+            }
+
+            // Renderizar lista de reuniones
+            try {
+                var reuniones = await getReuniones();
+                var invitaciones = await getInvitaciones();
+                var externos = await getInvitadosExternos();
+                var asistencia = await getAsistencia();
+
+                var reunionesBarrio = (reuniones || []).filter(function (r) { return r.barrio === sessionBarrio; });
+                var container = document.getElementById('reunionesList');
+
+                if (reunionesBarrio.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>No hay reuniones programadas</p></div>';
+                    return;
+                }
+
+                container.innerHTML = reunionesBarrio.map(function (r) {
+                    var esCreador = r.creado_por === sessionUsername;
+                    var html = '<div class="acta-card" style="margin-bottom:12px;">' +
+                        '<div class="acta-card-header">' +
+                        '<span class="acta-card-num">' + r.titulo + '</span>' +
+                        '<span class="acta-card-meta">' + r.estado + '</span>' +
+                        '</div>' +
+                        '<div class="acta-card-detail">' + r.fecha + ' · ' + r.hora_inicio + ' · ' + r.duracion_minutos + 'min</div>' +
+                        '<div class="acta-card-footer" style="flex-wrap:wrap;gap:8px;">';
+
+                    // Botón unirse (para creador, invitados confirmados, y externos aprobados)
+                    var puedeUnirse = false;
+                    var miInvitacion = (invitaciones || []).find(function (i) { return i.reunion_id == r.id && i.invitado_username === sessionUsername; });
+                    var miExterno = (externos || []).find(function (e) { return e.reunion_id == r.id && e.cedula === (sessionCedula || ''); });
+
+                    if (esCreador) {
+                        puedeUnirse = true;
+                    } else if (miInvitacion && miInvitacion.estado === 'confirmada') {
+                        // Verificar que falte al menos 1 hora para la reunión
+                        var fechaHoraReunion = new Date(r.fecha + 'T' + r.hora_inicio);
+                        var ahora = new Date();
+                        var diffMs = fechaHoraReunion.getTime() - ahora.getTime();
+                        if (diffMs <= 0) {
+                            // La reunión ya empezó o pasó
+                            puedeUnirse = true;
+                        }
+                        // Si ya empezó o pasó la hora de inicio + duración, no puede unirse
+                        var finMs = fechaHoraReunion.getTime() + r.duracion_minutos * 60000;
+                        if (ahora.getTime() > finMs) {
+                            puedeUnirse = false;
+                        }
+                    } else if (miExterno && miExterno.estado === 'aprobado') {
+                        var fechaHoraReunionE = new Date(r.fecha + 'T' + r.hora_inicio);
+                        var ahoraE = new Date();
+                        var finMsE = fechaHoraReunionE.getTime() + r.duracion_minutos * 60000;
+                        if (ahoraE.getTime() <= finMsE) {
+                            puedeUnirse = true;
+                        }
+                    }
+
+                    if (puedeUnirse) {
+                        html += '<button class="acta-card-btn" onclick="unirseReunion(' + r.id + ')">📹 Unirse</button>';
+                    }
+
+                    // Botón confirmar/rechazar para invitados
+                    if (!esCreador && miInvitacion && miInvitacion.estado === 'pendiente') {
+                        html += '<button class="acta-card-btn" onclick="confirmarInvitacion(' + miInvitacion.id + ',' + r.id + ')">✅ Confirmar asistencia</button>';
+                        html += '<button class="acta-card-btn" style="background:#fee2e2;color:#dc2626;" onclick="rechazarInvitacion(' + miInvitacion.id + ')">❌ Rechazar</button>';
+                    }
+
+                    // Botón ver asistencia (solo creador, después de la reunión)
+                    if (esCreador) {
+                        var asistentes = (asistencia || []).filter(function (a) { return a.reunion_id == r.id; });
+                        if (asistentes.length > 0) {
+                            html += '<button class="acta-card-btn" onclick="verAsistenciaReunion(' + r.id + ')">📋 Asistencia (' + asistentes.length + ')</button>';
+                        }
+                    }
+
+                    html += '</div></div>';
+                    return html;
+                }).join('');
+
+                // Renderizar solicitudes externas pendientes (solo para creadores)
+                if (puedeCrearReuniones()) {
+                    var pendientes = (externos || []).filter(function (e) {
+                        var reunion = reunionesBarrio.find(function (r) { return r.id == e.reunion_id; });
+                        return reunion && e.estado === 'pendiente';
+                    });
+                    var solContainer = document.getElementById('solicitudesExternasList');
+                    if (pendientes.length === 0) {
+                        solContainer.innerHTML = '<p style="color:var(--text-muted);">No hay solicitudes pendientes</p>';
+                    } else {
+                        solContainer.innerHTML = pendientes.map(function (e) {
+                            var reu = reunionesBarrio.find(function (r) { return r.id == e.reunion_id; });
+                            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">' +
+                                '<div><strong>' + (e.nombre || 'Sin nombre') + '</strong> (Cédula: ' + e.cedula + ')<br><span style="font-size:0.8rem;color:var(--text-muted);">Reunión: ' + (reu ? reu.titulo : 'ID ' + e.reunion_id) + '</span></div>' +
+                                '<div style="display:flex;gap:6px;">' +
+                                '<button class="acta-card-btn" onclick="aprobarExterno(' + e.id + ',' + e.reunion_id + ')">✅ Aprobar</button>' +
+                                '<button class="acta-card-btn" style="background:#fee2e2;color:#dc2626;" onclick="rechazarExterno(' + e.id + ')">❌ Rechazar</button>' +
+                                '</div></div>';
+                        }).join('');
+                    }
+                }
+            } catch (e) {
+                document.getElementById('reunionesList').innerHTML = '<p style="color:var(--red);">Error al cargar reuniones: ' + e.message + '</p>';
+            }
+        }
+
+        // Crear reunión
+        document.getElementById('formReunion').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!puedeCrearReuniones()) return;
+            var msg = document.getElementById('reuMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            var titulo = document.getElementById('reuTitulo').value.trim();
+            var fecha = document.getElementById('reuFecha').value.trim();
+            var hora = document.getElementById('reuHora').value.trim();
+            var duracion = parseInt(document.getElementById('reuDuracion').value) || 60;
+
+            if (!titulo || !fecha || !hora) {
+                msg.textContent = 'Completá todos los campos';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            var btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Creando...';
+
+            // Generar nombre único de sala
+            var salaNombre = 'jac-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+
+            var reunionData = {
+                titulo: titulo,
+                fecha: fecha,
+                hora_inicio: hora,
+                duracion_minutos: duracion,
+                sala_nombre: salaNombre,
+                creado_por: sessionUsername,
+                creador_nombre: sessionName,
+                barrio: sessionBarrio,
+                ciudad: sessionCiudad,
+                estado: 'programada',
+            };
+
+            var result = await saveReunion(reunionData);
+            if (!result.ok) {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '📅 Crear Reunión';
+                return;
+            }
+
+            // Obtener el ID de la reunión recién creada
+            var reuniones = await getReuniones();
+            var reuId = (reuniones || []).find(function (r) { return r.sala_nombre === salaNombre; });
+            if (reuId) {
+                // Crear invitaciones para miembros seleccionados
+                var checks = document.querySelectorAll('.reu-invitar-chk:checked');
+                checks.forEach(function (chk) {
+                    saveInvitacion({
+                        reunion_id: reuId.id,
+                        invitado_username: chk.value,
+                        invitado_nombre: chk.dataset.nombre,
+                        estado: 'pendiente',
+                    }).catch(function () {});
+                });
+
+                // Crear invitados externos
+                var externosTexto = document.getElementById('reuExternos').value.trim();
+                if (externosTexto) {
+                    var cedulas = externosTexto.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+                    cedulas.forEach(function (ced) {
+                        saveInvitadoExterno({
+                            reunion_id: reuId.id,
+                            cedula: ced,
+                            nombre: '',
+                            estado: 'pendiente',
+                        }).catch(function () {});
+                    });
+                }
+            }
+
+            msg.textContent = '✅ Reunión creada exitosamente';
+            msg.className = 'msg success';
+            msg.style.display = 'block';
+            this.reset();
+            btn.disabled = false;
+            btn.textContent = '📅 Crear Reunión';
+            renderReuniones().catch(function () {});
+        });
+
+        // Confirmar/rechazar invitación
+        async function confirmarInvitacion(invId, reuId) {
+            await updateInvitacion(invId, { estado: 'confirmada' });
+            renderReuniones().catch(function () {});
+        }
+        async function rechazarInvitacion(invId) {
+            await updateInvitacion(invId, { estado: 'rechazada' });
+            renderReuniones().catch(function () {});
+        }
+
+        // Aprobar/rechazar externo
+        async function aprobarExterno(extId, reuId) {
+            await updateInvitadoExterno(extId, { estado: 'aprobado' });
+            renderReuniones().catch(function () {});
+        }
+        async function rechazarExterno(extId) {
+            await updateInvitadoExterno(extId, { estado: 'rechazado' });
+            renderReuniones().catch(function () {});
+        }
+
+        // Unirse a reunión (Jitsi)
+        async function unirseReunion(reuId) {
+            try {
+                var reuniones = await getReuniones();
+                var r = (reuniones || []).find(function (x) { return x.id == reuId; });
+                if (!r) { alert('Reunión no encontrada'); return; }
+
+                // Actualizar estado a en_curso si es programada
+                if (r.estado === 'programada') {
+                    await updateReunion(r.id, { estado: 'en_curso' });
+                }
+
+                // Registrar asistencia
+                var asisResult = await saveAsistencia({
+                    reunion_id: r.id,
+                    participante_username: sessionUsername,
+                    participante_cedula: sessionUsername || '',
+                    participante_nombre: sessionName,
+                    rol: sessionRole,
+                    hora_ingreso: new Date().toISOString(),
+                });
+                if (asisResult.ok) {
+                    var asistencias = await getAsistencia();
+                    var miAsistencia = (asistencias || []).find(function (a) {
+                        return a.reunion_id == r.id && a.participante_username === sessionUsername && !a.hora_salida;
+                    });
+                    if (miAsistencia) reuAsistenciaId = miAsistencia.id;
+                }
+
+                // Abrir Jitsi
+                document.getElementById('jitsiReunionTitulo').textContent = r.titulo;
+                document.getElementById('jitsiIframe').src = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false&config.startWithVideoMuted=false';
+                document.getElementById('modalJitsi').style.display = 'block';
+            } catch (e) {
+                alert('Error al unirse: ' + e.message);
+            }
+        }
+
+        // Salir de reunión
+        document.getElementById('btnSalirReunion').addEventListener('click', async function () {
+            if (reuAsistenciaId) {
+                await updateAsistencia(reuAsistenciaId, { hora_salida: new Date().toISOString() });
+                reuAsistenciaId = null;
+            }
+            document.getElementById('jitsiIframe').src = '';
+            document.getElementById('modalJitsi').style.display = 'none';
+            renderReuniones().catch(function () {});
+        });
+
+        // Ver asistencia
+        async function verAsistenciaReunion(reuId) {
+            try {
+                var asistencia = await getAsistencia();
+                var lista = (asistencia || []).filter(function (a) { return a.reunion_id == reuId; });
+                var reuniones = await getReuniones();
+                var r = (reuniones || []).find(function (x) { return x.id == reuId; });
+
+                var info = '<div style="font-size:2rem;text-align:center;margin-bottom:8px;">📋</div>' +
+                    '<h3 style="text-align:center;margin-bottom:4px;">Registro de asistencia</h3>' +
+                    '<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">' + (r ? r.titulo : 'Reunión #' + reuId) + '</p>';
+
+                if (lista.length === 0) {
+                    info += '<p style="text-align:center;color:var(--text-muted);">No hay registro de asistencia</p>';
+                } else {
+                    info += '<div style="overflow-x:auto;"><table><thead><tr><th>Participante</th><th>Rol</th><th>Ingreso</th><th>Salida</th></tr></thead><tbody>';
+                    lista.forEach(function (a) {
+                        info += '<tr>' +
+                            '<td>' + (a.participante_nombre || a.participante_username || a.participante_cedula) + '</td>' +
+                            '<td>' + a.rol + '</td>' +
+                            '<td>' + (a.hora_ingreso ? new Date(a.hora_ingreso).toLocaleString('es-CO') : '—') + '</td>' +
+                            '<td>' + (a.hora_salida ? new Date(a.hora_salida).toLocaleString('es-CO') : 'En sala') + '</td>' +
+                            '</tr>';
+                    });
+                    info += '</tbody></table></div>';
+                }
+
+                // Mostrar en modal existente
+                document.getElementById('actaCompletaContent').innerHTML = info;
+                document.getElementById('modalActaCompleta').style.display = 'flex';
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        // Polling para solicitudes externas (cada 15 segundos)
+        if (puedeCrearReuniones()) {
+            reuPollInterval = setInterval(function () {
+                var tab = document.querySelector('.tab-item.active');
+                if (tab && tab.getAttribute('data-tab') === 'tab-reuniones') {
+                    renderReuniones().catch(function () {});
+                }
+            }, 15000);
         }
 
         // ===== INIT =====
