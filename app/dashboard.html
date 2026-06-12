@@ -278,6 +278,15 @@
       </div>
     </div>
 
+    <!-- Carrusel de fotos -->
+    <div id="modalCarrusel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;align-items:center;justify-content:center;">
+      <button onclick="cerrarCarrusel()" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:2rem;color:white;cursor:pointer;z-index:10;">✕</button>
+      <button id="carruselPrev" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:48px;height:48px;font-size:1.5rem;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">‹</button>
+      <button id="carruselNext" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:48px;height:48px;font-size:1.5rem;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">›</button>
+      <img id="carruselImg" src="" style="max-width:90vw;max-height:85vh;border-radius:8px;object-fit:contain;">
+      <div id="carruselCounter" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:white;font-size:0.9rem;background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:20px;"></div>
+    </div>
+
     <!-- Modal solicitud de eliminación -->
     <div id="modalSolicitudElim" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
       <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;max-height:90vh;overflow-y:auto;">
@@ -921,13 +930,49 @@
         // ===== ACTAS =====
         var actaSearchCache = null;
 
+        var carruselUrls = [];
+        var carruselIdx = 0;
+
+        function abrirCarrusel(urls, idx) {
+            carruselUrls = urls;
+            carruselIdx = idx;
+            actualizarCarrusel();
+            document.getElementById('modalCarrusel').style.display = 'flex';
+        }
+
+        function cerrarCarrusel() {
+            document.getElementById('modalCarrusel').style.display = 'none';
+        }
+
+        function actualizarCarrusel() {
+            document.getElementById('carruselImg').src = carruselUrls[carruselIdx];
+            document.getElementById('carruselCounter').textContent = (carruselIdx + 1) + ' / ' + carruselUrls.length;
+        }
+
+        document.getElementById('carruselPrev').addEventListener('click', function () {
+            carruselIdx = (carruselIdx - 1 + carruselUrls.length) % carruselUrls.length;
+            actualizarCarrusel();
+        });
+        document.getElementById('carruselNext').addEventListener('click', function () {
+            carruselIdx = (carruselIdx + 1) % carruselUrls.length;
+            actualizarCarrusel();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (document.getElementById('modalCarrusel').style.display !== 'flex') return;
+            if (e.key === 'Escape') cerrarCarrusel();
+            if (e.key === 'ArrowLeft') document.getElementById('carruselPrev').click();
+            if (e.key === 'ArrowRight') document.getElementById('carruselNext').click();
+        });
+
         function mostrarActaCompleta(a) {
             var fotosHtml = '';
+            var _fotosUrls = [];
             if (a.imagenes) {
-                var urls = a.imagenes.split(',');
+                _fotosUrls = a.imagenes.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
+                window._actaFotosUrls = _fotosUrls;
                 fotosHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
-                    urls.map(function (u) {
-                        return '<a href="' + u.trim() + '" target="_blank"><img src="' + u.trim() + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>';
+                    _fotosUrls.map(function (u, i) {
+                        return '<img src="' + u + '" onclick="abrirCarrusel(window._actaFotosUrls,' + i + ')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:transform 0.2s;" onmouseenter="this.style.transform=\'scale(1.05)\'" onmouseleave="this.style.transform=\'scale(1)\'">';
                     }).join('') + '</div>';
             }
             document.getElementById('actaCompletaContent').innerHTML =
