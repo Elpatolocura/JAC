@@ -1152,6 +1152,16 @@
                 return;
             }
 
+            // Validar número de acta único en el barrio
+            var existentes = await getActas(sessionBarrio);
+            var duplicado = (existentes || []).find(function (a) { return a.numero === campos.numero; });
+            if (duplicado) {
+                msg.textContent = 'Ya existe un acta con el número ' + campos.numero + ' en ' + sessionBarrio;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
             var btn = this.querySelector('button');
             btn.disabled = true;
             btn.textContent = 'Guardando...';
