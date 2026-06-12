@@ -688,6 +688,18 @@ table tr:hover td {
     background: var(--blue-dark);
 }
 
+/* Reuniones cards - no cursor pointer */
+.acta-card {
+    cursor: default;
+}
+
+@media (max-width: 480px) {
+    .acta-card-btn {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+    }
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .login-container {
