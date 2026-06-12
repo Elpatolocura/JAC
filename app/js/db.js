@@ -153,3 +153,25 @@ async function checkCedulaDuplicada(cedula) {
     return null;
   }
 }
+
+async function saveSolicitudEliminacion(data) {
+  try {
+    await apiFetch('solicitudes_eliminacion', {
+      method: 'POST',
+      body: JSON.stringify({
+        registro_id: data.registroId,
+        nombres: data.nombres,
+        apellidos: data.apellidos,
+        cedula: data.cedula,
+        barrio: data.barrio,
+        motivos: data.motivos,
+        observacion: data.observacion || '',
+        solicitado_por: data.solicitadoPor || '',
+        created_at: new Date().toISOString(),
+      }),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}

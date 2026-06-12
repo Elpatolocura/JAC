@@ -79,3 +79,26 @@ DROP POLICY IF EXISTS anon_select_codigos ON codigos_registro;
 CREATE POLICY anon_select_codigos ON codigos_registro FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_codigos ON codigos_registro;
 CREATE POLICY anon_update_codigos ON codigos_registro FOR UPDATE USING (true);
+
+-- ============================================
+-- Tabla de solicitudes de eliminación (Ley 1581/2012)
+-- ============================================
+CREATE TABLE IF NOT EXISTS solicitudes_eliminacion (
+  id BIGSERIAL PRIMARY KEY,
+  registro_id TEXT NOT NULL,
+  nombres TEXT NOT NULL,
+  apellidos TEXT NOT NULL,
+  cedula TEXT NOT NULL,
+  barrio TEXT NOT NULL,
+  motivos TEXT NOT NULL,
+  observacion TEXT DEFAULT '',
+  solicitado_por TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS
+ALTER TABLE solicitudes_eliminacion ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_solicitudes ON solicitudes_eliminacion;
+CREATE POLICY anon_insert_solicitudes ON solicitudes_eliminacion FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_solicitudes ON solicitudes_eliminacion;
+CREATE POLICY anon_select_solicitudes ON solicitudes_eliminacion FOR SELECT USING (true);
