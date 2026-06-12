@@ -970,20 +970,39 @@
         });
 
         // Vista previa de fotos
+        var actaFotosArray = [];
+
         document.getElementById('actaFotos').addEventListener('change', function () {
+            Array.from(this.files).forEach(function (f) { actaFotosArray.push(f); });
+            this.value = '';
+            renderActaFotosPreview();
+        });
+
+        function renderActaFotosPreview() {
             var container = document.getElementById('actaFotosPreview');
             container.innerHTML = '';
-            Array.from(this.files).forEach(function (file) {
+            actaFotosArray.forEach(function (file, idx) {
                 var reader = new FileReader();
                 reader.onload = function (e) {
+                    var wrap = document.createElement('div');
+                    wrap.style.cssText = 'position:relative;display:inline-block;';
                     var img = document.createElement('img');
                     img.src = e.target.result;
                     img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);';
-                    container.appendChild(img);
+                    var del = document.createElement('button');
+                    del.textContent = '✕';
+                    del.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--red);color:white;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;';
+                    del.onclick = function () {
+                        actaFotosArray.splice(idx, 1);
+                        renderActaFotosPreview();
+                    };
+                    wrap.appendChild(img);
+                    wrap.appendChild(del);
+                    container.appendChild(wrap);
                 };
                 reader.readAsDataURL(file);
             });
-        });
+        }
 
         // Subir imagen a Supabase Storage
         async function subirImagen(file) {
@@ -1034,12 +1053,11 @@
             btn.textContent = 'Guardando...';
 
             // Subir fotos si hay
-            var fileInput = document.getElementById('actaFotos');
-            if (fileInput.files.length > 0) {
+            if (actaFotosArray.length > 0) {
                 try {
                     var urls = [];
-                    for (var i = 0; i < fileInput.files.length; i++) {
-                        var url = await subirImagen(fileInput.files[i]);
+                    for (var i = 0; i < actaFotosArray.length; i++) {
+                        var url = await subirImagen(actaFotosArray[i]);
                         urls.push(url);
                     }
                     campos.imagenes = urls.join(',');
@@ -1060,6 +1078,7 @@
                 msg.className = 'msg success';
                 msg.style.display = 'block';
                 this.reset();
+                actaFotosArray = [];
                 document.getElementById('actaFotosPreview').innerHTML = '';
                 cargarActas();
                 setTimeout(function () { msg.style.display = 'none'; }, 3000);
