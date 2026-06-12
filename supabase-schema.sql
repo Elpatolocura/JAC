@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS actas (
   orden_dia TEXT NOT NULL,
   desarrollo TEXT NOT NULL,
   acuerdos TEXT DEFAULT '',
+  imagenes TEXT DEFAULT '',
   barrio TEXT NOT NULL,
   creado_por TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -136,3 +137,11 @@ DROP POLICY IF EXISTS anon_insert_actas ON actas;
 CREATE POLICY anon_insert_actas ON actas FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS anon_select_actas ON actas;
 CREATE POLICY anon_select_actas ON actas FOR SELECT USING (true);
+
+-- Migración para tabla existente
+ALTER TABLE actas ADD COLUMN IF NOT EXISTS imagenes TEXT DEFAULT '';
+
+-- Bucket de almacenamiento para evidencias (ejecutar en Storage > Create bucket o SQL)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('evidencias', 'evidencias', true) ON CONFLICT DO NOTHING;
+-- CREATE POLICY anon_select_evidencias ON storage.objects FOR SELECT USING (bucket_id = 'evidencias');
+-- CREATE POLICY anon_insert_evidencias ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'evidencias');

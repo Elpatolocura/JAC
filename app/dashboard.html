@@ -202,6 +202,11 @@
                         <label for="actaAcuerdos">Acuerdos y compromisos</label>
                         <textarea id="actaAcuerdos" placeholder="1. ...&#10;2. ..." style="min-height:80px;"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="actaFotos">Evidencias (fotos)</label>
+                        <input type="file" id="actaFotos" accept="image/*" multiple style="font-size:0.9rem;">
+                        <div id="actaFotosPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+                    </div>
                     <button type="submit" class="btn-primary">💾 Guardar Acta</button>
                     <div class="msg" id="actaMsg"></div>
                 </form>
@@ -885,14 +890,56 @@
                 return;
             }
             container.innerHTML = actasCache.map(function (a) {
+                var fotos = '';
+                if (a.imagenes) {
+                    var urls = a.imagenes.split(',');
+                    fotos = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">' +
+                        urls.map(function (u) {
+                            return '<a href="' + u.trim() + '" target="_blank"><img src="' + u.trim() + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>';
+                        }).join('') + '</div>';
+                }
                 return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:0.9rem;">' +
                     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
                     '<strong>Acta N° ' + a.numero + '</strong>' +
                     '<span style="font-size:0.8rem;color:var(--text-muted);">' + a.fecha + ' | ' + a.hora_inicio + ' - ' + a.hora_fin + '</span>' +
                     '</div>' +
                     '<div style="color:var(--text-muted);font-size:0.85rem;">' + a.lugar + ' · ' + a.tipo + '</div>' +
+                    fotos +
                     '</div>';
             }).join('');
+        }
+
+        // Vista previa de fotos
+        document.getElementById('actaFotos').addEventListener('change', function () {
+            var container = document.getElementById('actaFotosPreview');
+            container.innerHTML = '';
+            Array.from(this.files).forEach(function (file) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);';
+                    container.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Subir imagen a Supabase Storage
+        async function subirImagen(file) {
+            var nombre = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+            var formData = new FormData();
+            formData.append('file', file);
+            var res = await fetch(SUPABASE_URL + '/storage/v1/object/evidencias/' + nombre, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                },
+                body: formData,
+            });
+            if (!res.ok) throw new Error('Error al subir imagen');
+            return SUPABASE_URL + '/storage/v1/object/public/evidencias/' + nombre;
         }
 
         document.getElementById('formActa').addEventListener('submit', async function (e) {
@@ -926,6 +973,26 @@
             btn.disabled = true;
             btn.textContent = 'Guardando...';
 
+            // Subir fotos si hay
+            var fileInput = document.getElementById('actaFotos');
+            if (fileInput.files.length > 0) {
+                try {
+                    var urls = [];
+                    for (var i = 0; i < fileInput.files.length; i++) {
+                        var url = await subirImagen(fileInput.files[i]);
+                        urls.push(url);
+                    }
+                    campos.imagenes = urls.join(',');
+                } catch (err) {
+                    msg.textContent = 'Error al subir fotos: ' + err.message;
+                    msg.className = 'msg error';
+                    msg.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = '💾 Guardar Acta';
+                    return;
+                }
+            }
+
             var result = await saveActa(campos);
 
             if (result.ok) {
@@ -933,6 +1000,7 @@
                 msg.className = 'msg success';
                 msg.style.display = 'block';
                 this.reset();
+                document.getElementById('actaFotosPreview').innerHTML = '';
                 cargarActas();
                 setTimeout(function () { msg.style.display = 'none'; }, 3000);
             } else {
