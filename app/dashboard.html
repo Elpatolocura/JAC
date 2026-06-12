@@ -1017,7 +1017,10 @@
                 },
                 body: formData,
             });
-            if (!res.ok) throw new Error('Error al subir imagen');
+            if (!res.ok) {
+                var texto = await res.text().catch(function () { return ''; });
+                throw new Error('No se pudo subir la imagen. Creá el bucket "evidencias" en Supabase Storage (público). Detalles: ' + texto.slice(0, 100));
+            }
             return SUPABASE_URL + '/storage/v1/object/public/evidencias/' + nombre;
         }
 
