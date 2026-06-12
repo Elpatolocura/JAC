@@ -88,11 +88,22 @@
 
             try {
                 var externos = await getInvitadosExternos();
+                var invitaciones = await getInvitaciones();
                 var reuniones = await getReuniones();
 
-                var misExternos = (externos || []).filter(function (e) { return e.cedula === cedula; });
+                // Unir ambos: externos (invitados_externos) e invitaciones internas (invitaciones_reunion)
+                var misReuniones = {};
+                (externos || []).filter(function (e) { return e.cedula === cedula; }).forEach(function (e) {
+                    misReuniones[e.reunion_id] = { reunion_id: e.reunion_id, estado: e.estado, tipo: 'externo' };
+                });
+                (invitaciones || []).filter(function (i) { return i.invitado_username === cedula; }).forEach(function (i) {
+                    if (!misReuniones[i.reunion_id]) {
+                        misReuniones[i.reunion_id] = { reunion_id: i.reunion_id, estado: 'aprobado', tipo: 'invitado' };
+                    }
+                });
 
-                if (misExternos.length === 0) {
+                var keys = Object.keys(misReuniones);
+                if (keys.length === 0) {
                     msg.textContent = 'No se encontraron reuniones para esta cédula. Si fuiste invitado, verificá que el creador haya registrado correctamente tu cédula.';
                     msg.className = 'msg error';
                     msg.style.display = 'block';
@@ -103,23 +114,21 @@
                 }
 
                 var html = '<h3 style="margin-bottom:16px;">Tus reuniones</h3>';
-                misExternos.forEach(function (e) {
-                    var reu = (reuniones || []).find(function (r) { return r.id == e.reunion_id; });
+                keys.forEach(function (id) {
+                    var e = misReuniones[id];
+                    var reu = (reuniones || []).find(function (r) { return r.id == id; });
                     if (!reu) return;
                     var ahora = new Date();
                     var fechaReunion = new Date(reu.fecha + 'T' + reu.hora_inicio);
                     var finReunion = new Date(fechaReunion.getTime() + reu.duracion_minutos * 60000);
                     var puedeUnirse = e.estado === 'aprobado' && ahora >= fechaReunion && ahora <= finReunion;
+                    var estadoTexto = e.estado === 'pendiente' ? '⏳ Pendiente de aprobación' : e.estado === 'aprobado' ? '✅ Aprobado' : '❌ Rechazado';
 
                     html += '<div class="externo-card">' +
                         '<h4>' + reu.titulo + '</h4>' +
                         '<p style="font-size:0.9rem;color:var(--text-muted);">' +
                         reu.fecha + ' · ' + reu.hora_inicio + ' · ' + reu.duracion_minutos + 'min</p>' +
-                        '<p style="font-size:0.9rem;margin-top:8px;">Estado: ' +
-                        (e.estado === 'pendiente' ? '<span class="estado-pendiente">⏳ Pendiente de aprobación</span>' :
-                         e.estado === 'aprobado' ? '<span class="estado-aprobado">✅ Aprobado</span>' :
-                         '<span style="color:#dc2626;">❌ Rechazado</span>') +
-                        '</p>';
+                        '<p style="font-size:0.9rem;margin-top:8px;">Estado: ' + estadoTexto + '</p>';
 
                     if (puedeUnirse) {
                         html += '<button class="btn-unirse" onclick="unirseReunionExt(' + reu.id + ')">📹 Unirse a videollamada</button>';
