@@ -72,9 +72,13 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="regBarrio">Barrio</label>
-              <input type="text" id="regBarrio" placeholder="Ej: El Progreso, Torices..." required>
+              <label for="regCiudad">Ciudad</label>
+              <input type="text" id="regCiudad" placeholder="Ej: Cartagena" required>
             </div>
+          </div>
+          <div class="form-group">
+            <label for="regBarrio">Barrio</label>
+            <input type="text" id="regBarrio" placeholder="Ej: El Progreso, Torices..." required>
           </div>
           <button type="submit" class="btn-primary">Crear usuario</button>
           <div class="msg" id="regMsg"></div>
@@ -143,10 +147,11 @@
                 codigo: document.getElementById('regCodigo').value.trim(),
                 name: document.getElementById('regName').value.trim(),
                 role: document.getElementById('regRole').value,
+                ciudad: document.getElementById('regCiudad').value.trim(),
                 barrio: document.getElementById('regBarrio').value,
             };
 
-            if (!campos.username || !campos.password || !campos.codigo || !campos.name || !campos.role || !campos.barrio) {
+            if (!campos.username || !campos.password || !campos.codigo || !campos.name || !campos.role || !campos.ciudad || !campos.barrio) {
                 msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
                 msg.className = 'msg error';
                 msg.style.display = 'block';

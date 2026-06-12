@@ -11,7 +11,7 @@ async function loginUser(username, password) {
       if (password === storedPass) {
         return {
           ok: true,
-          user: { username: u.username, name: u.name, role: u.role, barrio: u.barrio, cedula: u.cedula || '' },
+          user: { username: u.username, name: u.name, role: u.role, ciudad: u.ciudad || '', barrio: u.barrio, cedula: u.cedula || '' },
           mustChangePassword: false,
         };
       }
@@ -40,6 +40,7 @@ async function loginUser(username, password) {
         username: r.cedula,
         name: r.nombres + ' ' + r.apellidos,
         role: r.role || 'Afiliado',
+        ciudad: r.ciudad || '',
         barrio: r.barrio,
         registroId: r.id,
         cedula: r.cedula,
@@ -105,6 +106,7 @@ async function registerUser(campos) {
         cedula: campos.cedula || '',
         name: campos.name,
         role: campos.role,
+        ciudad: campos.ciudad || '',
         barrio: campos.barrio,
         cambio_requerido: false,
       }),
@@ -143,10 +145,31 @@ async function saveRegistro(campos) {
   }
 }
 
+async function updateRegistro(id, campos) {
+  try {
+    const url = SUPABASE_URL + '/rest/v1/registros?id=eq.' + encodeURIComponent(id);
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(campos),
+    });
+    if (res.ok) return { ok: true };
+    const text = await res.text();
+    return { ok: false, error: text };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function checkCedulaDuplicada(cedula) {
   try {
     const data = await apiFetch(
-      'registros?cedula=eq.' + encodeURIComponent(cedula) + '&select=barrio'
+      'registros?cedula=eq.' + encodeURIComponent(cedula) + '&select=ciudad,barrio'
     );
     return data && data.length > 0 ? data[0] : null;
   } catch {

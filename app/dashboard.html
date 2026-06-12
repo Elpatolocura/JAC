@@ -45,26 +45,15 @@
                             <input type="tel" id="telefono" placeholder="Ej: 3001234567" required>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="direccion">Dirección</label>
-                        <input type="text" id="direccion" placeholder="Dirección de residencia" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="barrio">Barrio</label>
-                        <select id="barrio" required>
-                            <option value="">Seleccione un barrio</option>
-                            <option value="El Progreso">El Progreso</option>
-                            <option value="Villa Nueva">Villa Nueva</option>
-                            <option value="Los Olivos">Los Olivos</option>
-                            <option value="San Fernando">San Fernando</option>
-                            <option value="La Florida">La Florida</option>
-                            <option value="El Carmen">El Carmen</option>
-                            <option value="Bella Vista">Bella Vista</option>
-                            <option value="Centro">Centro</option>
-                            <option value="La Esperanza">La Esperanza</option>
-                            <option value="Ciudad Jardín">Ciudad Jardín</option>
-                            <option value="Torices">Torices</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ciudad">Ciudad</label>
+                            <input type="text" id="ciudad" placeholder="Ciudad" required readonly style="opacity:0.7;cursor:not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label for="barrio">Barrio</label>
+                            <input type="text" id="barrio" placeholder="Barrio" required readonly style="opacity:0.7;cursor:not-allowed;">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="observacion">Observación</label>
@@ -105,9 +94,10 @@
                                 <th>Cédula</th>
                                 <th>Teléfono</th>
                                 <th>Dirección</th>
+                                <th>Ciudad</th>
                                 <th>Barrio</th>
                                 <th>Fecha</th>
-                                <th style="width:90px;">Acción</th>
+                                <th style="width:130px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="tablaRegistros">
@@ -207,6 +197,43 @@
       </div>
     </div>
 
+    <!-- Modal edición de registro -->
+    <div id="modalEditarReg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;">
+        <button onclick="document.getElementById('modalEditarReg').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div style="font-size:2rem;text-align:center;margin-bottom:4px;">✏️</div>
+        <h3 style="text-align:center;margin-bottom:16px;">Editar registro</h3>
+        <form id="formEditarReg">
+          <input type="hidden" id="editId">
+          <input type="hidden" id="editCedula">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editNombres">Nombres</label>
+              <input type="text" id="editNombres" required>
+            </div>
+            <div class="form-group">
+              <label for="editApellidos">Apellidos</label>
+              <input type="text" id="editApellidos" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editTelefono">Teléfono</label>
+            <input type="tel" id="editTelefono" required>
+          </div>
+          <div class="form-group">
+            <label for="editDireccion">Dirección</label>
+            <input type="text" id="editDireccion" required>
+          </div>
+          <div class="form-group">
+            <label for="editObservacion">Observación</label>
+            <textarea id="editObservacion" style="min-height:60px;"></textarea>
+          </div>
+          <button type="submit" class="btn-primary">💾 Guardar cambios</button>
+          <div class="msg" id="editMsg"></div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal cambio de contraseña -->
     <div id="modalPassword" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
       <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;">
@@ -234,11 +261,12 @@
     <script src="js/db.js"></script>
     <script>
         // ===== SESSION =====
-        var sessionRole = '';
-        var sessionBarrio = '';
-        var sessionUsername = '';
-        var sessionRegistroId = '';
-        var sessionName = '';
+            var sessionRole = '';
+            var sessionCiudad = '';
+            var sessionBarrio = '';
+            var sessionUsername = '';
+            var sessionRegistroId = '';
+            var sessionName = '';
         (function () {
             const sessionData = localStorage.getItem('jac_session');
             if (!sessionData || !sessionData.includes('barrio')) {
@@ -249,6 +277,7 @@
             const session = JSON.parse(sessionData);
             document.getElementById('userName').textContent = session.name;
             sessionRole = session.role;
+            sessionCiudad = session.ciudad || session.barrio || '';
             sessionBarrio = session.barrio;
             sessionUsername = session.username || '';
             sessionRegistroId = session.registroId || '';
@@ -256,12 +285,9 @@
 
 
 
-            // Auto-asignar barrio del usuario en el formulario
-            const barrioSelect = document.getElementById('barrio');
-            barrioSelect.value = sessionBarrio;
-            barrioSelect.disabled = true;
-            barrioSelect.style.opacity = '0.7';
-            barrioSelect.title = 'Barrio asignado: ' + sessionBarrio;
+            // Auto-asignar ciudad y barrio del usuario en el formulario
+            document.getElementById('ciudad').value = sessionCiudad;
+            document.getElementById('barrio').value = sessionBarrio;
 
             // Restringir según rol
             if (sessionRole === 'Presidente') {
@@ -383,8 +409,11 @@
             const empty = document.getElementById('emptyState');
             const emptyText = document.getElementById('emptyText');
 
-            // Siempre filtrar por el barrio del usuario
-            list = list.filter(function (r) { return r.barrio === sessionBarrio; });
+            // Siempre filtrar por la ciudad y barrio del usuario
+            list = list.filter(function (r) {
+                if (r.ciudad) return r.ciudad === sessionCiudad && r.barrio === sessionBarrio;
+                return r.barrio === sessionBarrio;
+            });
 
             if (filtroCedula) {
                 list = list.filter(function (r) { return r.cedula === filtroCedula; });
@@ -408,19 +437,40 @@
             }
             empty.style.display = 'none';
 
+            var esSecretario = sessionRole === 'Secretario';
             tbody.innerHTML = list.map(function (r, i) {
+                var botones = '';
+                if (esSecretario) {
+                    botones += '<button class="btn-editar-reg" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-telefono="' + (r.telefono || '') + '" data-direccion="' + (r.direccion || '').replace(/"/g, '&quot;') + '" data-observacion="' + (r.observacion || '').replace(/"/g, '&quot;') + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;white-space:nowrap;margin-right:4px;">✏️</button>';
+                }
+                botones += '<button class="btn-solicitar-elim" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-barrio="' + r.barrio + '" style="padding:4px 10px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;white-space:nowrap;">🗑 Solicitar</button>';
                 return '<tr>' +
                     '<td>' + (i + 1) + '</td>' +
                     '<td>' + r.nombres + '</td>' +
                     '<td>' + r.apellidos + '</td>' +
                     '<td>' + r.cedula + '</td>' +
-                    '<td>' + r.telefono + '</td>' +
-                    '<td>' + r.direccion + '</td>' +
+                    '<td>' + (r.telefono || '') + '</td>' +
+                    '<td>' + (r.direccion || '') + '</td>' +
+                    '<td>' + (r.ciudad || '') + '</td>' +
                     '<td>' + r.barrio + '</td>' +
                     '<td>' + r.fecha + '</td>' +
-                    '<td><button class="btn-solicitar-elim" data-id="' + r.id + '" data-nombres="' + r.nombres + '" data-apellidos="' + r.apellidos + '" data-cedula="' + r.cedula + '" data-barrio="' + r.barrio + '" style="padding:4px 10px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;white-space:nowrap;">🗑 Solicitar</button></td>' +
+                    '<td style="white-space:nowrap;">' + botones + '</td>' +
                     '</tr>';
             }).join('');
+            // Delegación de eventos para botones de edición
+            tbody.querySelectorAll('.btn-editar-reg').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    abrirEdicionRegistro({
+                        id: this.dataset.id,
+                        nombres: this.dataset.nombres,
+                        apellidos: this.dataset.apellidos,
+                        cedula: this.dataset.cedula,
+                        telefono: this.dataset.telefono,
+                        direccion: this.dataset.direccion,
+                        observacion: this.dataset.observacion,
+                    });
+                });
+            });
             // Delegación de eventos para botones de solicitud
             tbody.querySelectorAll('.btn-solicitar-elim').forEach(function (btn) {
                 btn.addEventListener('click', function () {
@@ -464,6 +514,7 @@
                 cedula: document.getElementById('cedula').value.trim(),
                 telefono: document.getElementById('telefono').value.trim(),
                 direccion: document.getElementById('direccion').value.trim(),
+                ciudad: sessionCiudad,
                 barrio: sessionBarrio,
                 observacion: document.getElementById('observacion').value.trim(),
                 cambio_requerido: false,
@@ -480,7 +531,7 @@
             // Validar cédula única en todo el sistema
             const duplicado = await checkCedulaDuplicada(campos.cedula);
             if (duplicado) {
-                msg.textContent = 'Esa cédula ya está registrada en el barrio ' + duplicado.barrio;
+                msg.textContent = 'Esa cédula ya está registrada en ' + (duplicado.ciudad || duplicado.barrio) + ', barrio ' + duplicado.barrio;
                 msg.className = 'msg error';
                 msg.style.display = 'block';
                 return;
@@ -497,10 +548,11 @@
             const result = await saveRegistro(campos);
 
             if (result.ok) {
-                msg.textContent = '✅ Inscripción guardada exitosamente en ' + sessionBarrio;
+                msg.textContent = '✅ Inscripción guardada exitosamente en ' + sessionCiudad + ', barrio ' + sessionBarrio;
                 msg.className = 'msg success';
                 msg.style.display = 'block';
                 this.reset();
+                document.getElementById('ciudad').value = sessionCiudad;
                 document.getElementById('barrio').value = sessionBarrio;
             } else {
                 msg.textContent = 'Error: ' + result.error;
@@ -629,6 +681,68 @@
             }
         });
 
+        // ===== EDICIÓN DE REGISTRO =====
+        var editData = null;
+
+        function abrirEdicionRegistro(data) {
+            editData = data;
+            document.getElementById('editId').value = data.id;
+            document.getElementById('editCedula').value = data.cedula;
+            document.getElementById('editNombres').value = data.nombres;
+            document.getElementById('editApellidos').value = data.apellidos;
+            document.getElementById('editTelefono').value = data.telefono;
+            document.getElementById('editDireccion').value = data.direccion;
+            document.getElementById('editObservacion').value = data.observacion;
+            document.getElementById('editMsg').className = 'msg';
+            document.getElementById('editMsg').style.display = 'none';
+            document.getElementById('modalEditarReg').style.display = 'flex';
+        }
+
+        document.getElementById('formEditarReg').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msg = document.getElementById('editMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+
+            const id = document.getElementById('editId').value;
+            const campos = {
+                nombres: document.getElementById('editNombres').value.trim(),
+                apellidos: document.getElementById('editApellidos').value.trim(),
+                telefono: document.getElementById('editTelefono').value.trim(),
+                direccion: document.getElementById('editDireccion').value.trim(),
+                observacion: document.getElementById('editObservacion').value.trim(),
+            };
+
+            if (!campos.nombres || !campos.apellidos || !campos.telefono || !campos.direccion) {
+                msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            const result = await updateRegistro(id, campos);
+
+            if (result.ok) {
+                msg.textContent = '✅ Registro actualizado exitosamente';
+                msg.className = 'msg success';
+                msg.style.display = 'block';
+                setTimeout(function () {
+                    document.getElementById('modalEditarReg').style.display = 'none';
+                    renderTable().catch(function () {});
+                }, 1500);
+            } else {
+                msg.textContent = 'Error: ' + result.error;
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '💾 Guardar cambios';
+            }
+        });
+
         // ===== SOLICITUD DE ELIMINACIÓN =====
         var elimData = null;
 
@@ -722,14 +836,17 @@
         document.getElementById('btnExportar').addEventListener('click', async function () {
             const cedula = document.getElementById('buscarCedula').value.trim();
             const all = await getRegistros();
-            let list = (all || []).filter(function (r) { return r.barrio === sessionBarrio; });
+            let list = (all || []).filter(function (r) {
+                if (r.ciudad) return r.ciudad === sessionCiudad && r.barrio === sessionBarrio;
+                return r.barrio === sessionBarrio;
+            });
             if (cedula) list = list.filter(function (r) { return r.cedula === cedula; });
             if (list.length === 0) return;
 
-            const encabezado = 'Nombres,Apellidos,Cédula,Teléfono,Dirección,Barrio,Observación,Fecha';
+            const encabezado = 'Nombres,Apellidos,Cédula,Teléfono,Dirección,Ciudad,Barrio,Observación,Fecha';
             const filas = list.map(function (r) {
                 return '"' + r.nombres + '","' + r.apellidos + '","' + r.cedula + '","' +
-                    r.telefono + '","' + r.direccion + '","' + r.barrio + '","' +
+                    r.telefono + '","' + r.direccion + '","' + (r.ciudad || '') + '","' + r.barrio + '","' +
                     (r.observacion || '') + '","' + r.fecha + '"';
             }).join('\n');
 
