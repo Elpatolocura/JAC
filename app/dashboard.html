@@ -347,7 +347,15 @@
                     </div>
                     <div class="form-group">
                         <label>Invitar miembros del barrio</label>
-                        <div id="reuInvitarLista" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:0.85rem;"></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
+                            <input type="text" id="reuFiltrarMiembros" placeholder="Buscar miembro..." style="flex:1;min-width:140px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;">
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <span id="reuSeleccionadosCount" style="font-size:0.8rem;color:var(--text-muted);align-self:center;">0 seleccionados</span>
+                                <button type="button" id="btnSeleccionarTodos" style="padding:6px 12px;border:1px solid var(--blue);border-radius:8px;background:white;color:var(--blue);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">✓ Todos</button>
+                                <button type="button" id="btnDeseleccionarTodos" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-muted);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">✕ Ninguno</button>
+                            </div>
+                        </div>
+                        <div id="reuInvitarLista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:6px;font-size:0.85rem;"></div>
                     </div>
                     <div class="form-group">
                         <label for="reuExternos">Cédulas de externos (una por línea)</label>
@@ -1801,31 +1809,14 @@
                     var todosUsu = await getUsuarios();
                     var miembrosReg = (todosReg || []).filter(function (r) { return r.barrio === sessionBarrio; });
                     var miembrosUsu = (todosUsu || []).filter(function (u) { return u.barrio === sessionBarrio; });
-                    var container = document.getElementById('reuInvitarLista');
-                    var html = '';
-                    if (miembrosUsu.length > 0) {
-                        html += '<div style="font-weight:600;font-size:0.8rem;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">Directiva (Presidente, Secretario, Tesorero)</div>';
-                        html += miembrosUsu.map(function (u) {
-                            return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">' +
-                                '<input type="checkbox" class="reu-invitar-chk" value="' + u.username + '" data-nombre="' + u.name.replace(/"/g, '&quot;') + '"> ' +
-                                u.name + ' (' + u.role + ')' +
-                                '</label>';
-                        }).join('');
-                    }
-                    if (miembrosReg.length > 0) {
-                        html += '<div style="font-weight:600;font-size:0.8rem;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);margin:4px 0;">Afiliados</div>';
-                        html += miembrosReg.map(function (m) {
-                            return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">' +
-                                '<input type="checkbox" class="reu-invitar-chk" value="' + m.cedula + '" data-nombre="' + (m.nombres + ' ' + m.apellidos).replace(/"/g, '&quot;') + '"> ' +
-                                m.nombres + ' ' + m.apellidos + ' (' + m.cedula + ')' +
-                                '</label>';
-                        }).join('');
-                    }
-                    if (!html) {
-                        container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">No hay miembros registrados en este barrio</p>';
-                    } else {
-                        container.innerHTML = html;
-                    }
+                    window._reuMiembros = [];
+                    miembrosUsu.forEach(function (u) {
+                        window._reuMiembros.push({ value: u.username, nombre: u.name, grupo: 'directiva', rol: u.role, iniciales: u.name.split(' ').map(function(s){return s[0];}).join('').substring(0,2).toUpperCase() });
+                    });
+                    miembrosReg.forEach(function (m) {
+                        window._reuMiembros.push({ value: m.cedula, nombre: m.nombres + ' ' + m.apellidos, grupo: 'afiliado', rol: 'Afiliado', iniciales: (m.nombres[0] + (m.apellidos ? m.apellidos[0] : '')).toUpperCase() });
+                    });
+                    renderMiembrosLista();
                 } catch (e) {
                     document.getElementById('reuInvitarLista').innerHTML = '<p style="color:var(--red);">Error al cargar miembros</p>';
                 }
@@ -2035,6 +2026,87 @@
             await updateInvitacion(invId, { estado: 'rechazada' });
             renderReuniones().catch(function () {});
         }
+
+        // Renderizar lista de miembros para invitar (con filtro)
+        function renderMiembrosLista(filtro) {
+            var miembros = window._reuMiembros || [];
+            var container = document.getElementById('reuInvitarLista');
+            if (miembros.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);padding:16px;text-align:center;">No hay miembros registrados en este barrio</p>';
+                return;
+            }
+
+            var filtrados = miembros;
+            if (filtro) {
+                var f = filtro.toLowerCase();
+                filtrados = miembros.filter(function (m) { return m.nombre.toLowerCase().includes(f) || m.value.includes(f); });
+            }
+
+            var directiva = filtrados.filter(function (m) { return m.grupo === 'directiva'; });
+            var afiliados = filtrados.filter(function (m) { return m.grupo === 'afiliado'; });
+
+            function rolColor(rol) {
+                if (rol === 'Presidente') return '#003893';
+                if (rol === 'Secretario') return '#059669';
+                if (rol === 'Tesorero') return '#d97706';
+                return '#6b7280';
+            }
+
+            var html = '';
+            if (directiva.length > 0) {
+                html += '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);padding:6px 8px 4px;">Directiva</div>';
+                html += directiva.map(function (m) {
+                    return '<label class="reu-miembro-item" data-search="' + m.nombre.toLowerCase() + '">' +
+                        '<input type="checkbox" class="reu-invitar-chk" value="' + m.value + '" data-nombre="' + m.nombre.replace(/"/g, '&quot;') + '">' +
+                        '<span class="reu-miembro-avatar" style="background:' + rolColor(m.rol) + ';">' + m.iniciales + '</span>' +
+                        '<span class="reu-miembro-info"><span class="reu-miembro-nombre">' + m.nombre + '</span><span class="reu-miembro-rol" style="color:' + rolColor(m.rol) + ';">' + m.rol + '</span></span>' +
+                        '</label>';
+                }).join('');
+            }
+            if (afiliados.length > 0) {
+                html += '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);padding:6px 8px 4px;margin-top:4px;">Afiliados</div>';
+                html += afiliados.map(function (m) {
+                    return '<label class="reu-miembro-item">' +
+                        '<input type="checkbox" class="reu-invitar-chk" value="' + m.value + '" data-nombre="' + m.nombre.replace(/"/g, '&quot;') + '">' +
+                        '<span class="reu-miembro-avatar" style="background:#6b7280;">' + m.iniciales + '</span>' +
+                        '<span class="reu-miembro-info"><span class="reu-miembro-nombre">' + m.nombre + '</span><span class="reu-miembro-rol">Afiliado</span></span>' +
+                        '</label>';
+                }).join('');
+            }
+
+            if (!html) {
+                container.innerHTML = '<p style="color:var(--text-muted);padding:16px;text-align:center;">No se encontraron miembros con ese filtro</p>';
+            } else {
+                container.innerHTML = html;
+            }
+            actualizarContadorSeleccionados();
+        }
+
+        function actualizarContadorSeleccionados() {
+            var n = document.querySelectorAll('.reu-invitar-chk:checked').length;
+            document.getElementById('reuSeleccionadosCount').textContent = n + ' seleccionado' + (n !== 1 ? 's' : '');
+        }
+
+        document.getElementById('reuFiltrarMiembros').addEventListener('input', function () {
+            renderMiembrosLista(this.value);
+        });
+
+        document.getElementById('btnSeleccionarTodos').addEventListener('click', function () {
+            document.querySelectorAll('.reu-invitar-chk:not(:checked)').forEach(function (c) { c.checked = true; });
+            actualizarContadorSeleccionados();
+        });
+
+        document.getElementById('btnDeseleccionarTodos').addEventListener('click', function () {
+            document.querySelectorAll('.reu-invitar-chk:checked').forEach(function (c) { c.checked = false; });
+            actualizarContadorSeleccionados();
+        });
+
+        // Actualizar contador al hacer clic en checkboxes (delegación)
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('reu-invitar-chk')) {
+                actualizarContadorSeleccionados();
+            }
+        });
 
         // Aprobar/rechazar externo
         async function aprobarExterno(extId, reuId) {
