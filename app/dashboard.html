@@ -1859,32 +1859,24 @@
                         '<div class="acta-card-detail">' + r.fecha + ' · ' + r.hora_inicio + ' · ' + r.duracion_minutos + 'min</div>' +
                         '<div class="acta-card-footer" style="flex-wrap:wrap;gap:8px;">';
 
-                    // Botón unirse (para creador, invitados confirmados, y externos aprobados)
+                    // Botón unirse (solo si la reunión no terminó)
                     var puedeUnirse = false;
-                    var miInvitacion = (invitaciones || []).find(function (i) { return i.reunion_id == r.id && i.invitado_username === sessionUsername; });
-                    var miExterno = (externos || []).find(function (e) { return e.reunion_id == r.id && e.cedula === (sessionCedula || ''); });
+                    var ahora = new Date();
+                    var fechaReunion = new Date(r.fecha + 'T' + r.hora_inicio);
+                    var finReunion = new Date(fechaReunion.getTime() + r.duracion_minutos * 60000);
+                    var reunionTerminada = ahora.getTime() > finReunion.getTime();
 
-                    if (esCreador) {
-                        puedeUnirse = true;
-                    } else if (miInvitacion && miInvitacion.estado === 'confirmada') {
-                        // Verificar que falte al menos 1 hora para la reunión
-                        var fechaHoraReunion = new Date(r.fecha + 'T' + r.hora_inicio);
-                        var ahora = new Date();
-                        var diffMs = fechaHoraReunion.getTime() - ahora.getTime();
-                        if (diffMs <= 0) {
-                            // La reunión ya empezó o pasó
+                    if (reunionTerminada) {
+                        puedeUnirse = false;
+                    } else {
+                        var miInvitacion = (invitaciones || []).find(function (i) { return i.reunion_id == r.id && i.invitado_username === sessionUsername; });
+                        var miExterno = (externos || []).find(function (e) { return e.reunion_id == r.id && e.cedula === (sessionCedula || ''); });
+
+                        if (esCreador) {
                             puedeUnirse = true;
-                        }
-                        // Si ya empezó o pasó la hora de inicio + duración, no puede unirse
-                        var finMs = fechaHoraReunion.getTime() + r.duracion_minutos * 60000;
-                        if (ahora.getTime() > finMs) {
-                            puedeUnirse = false;
-                        }
-                    } else if (miExterno && miExterno.estado === 'aprobado') {
-                        var fechaHoraReunionE = new Date(r.fecha + 'T' + r.hora_inicio);
-                        var ahoraE = new Date();
-                        var finMsE = fechaHoraReunionE.getTime() + r.duracion_minutos * 60000;
-                        if (ahoraE.getTime() <= finMsE) {
+                        } else if (miInvitacion && miInvitacion.estado === 'confirmada') {
+                            puedeUnirse = true;
+                        } else if (miExterno && miExterno.estado === 'aprobado') {
                             puedeUnirse = true;
                         }
                     }
