@@ -48,6 +48,10 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT T
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS anon_select_usuarios ON usuarios;
 CREATE POLICY anon_select_usuarios ON usuarios FOR SELECT USING (true);
+
+-- Cada barrio solo puede tener un usuario por rol
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_barrio_role_unique;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_barrio_role_unique UNIQUE (barrio, role);
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'Afiliado';
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';

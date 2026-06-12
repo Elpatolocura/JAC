@@ -97,6 +97,14 @@ async function registerUser(campos) {
       return { ok: false, error: 'El nombre de usuario ya está en uso' };
     }
 
+    // Verificar que no exista otro usuario con el mismo rol en el mismo barrio
+    const mismoRol = await apiFetch(
+      'usuarios?barrio=eq.' + encodeURIComponent(campos.barrio) + '&role=eq.' + encodeURIComponent(campos.role) + '&select=id'
+    );
+    if (mismoRol && mismoRol.length > 0) {
+      return { ok: false, error: 'Ya existe un ' + campos.role + ' en el barrio ' + campos.barrio + '. Cada barrio solo puede tener un usuario por rol.' };
+    }
+
     // Crear usuario
     await apiFetch('usuarios', {
       method: 'POST',
