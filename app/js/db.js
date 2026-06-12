@@ -111,6 +111,7 @@ async function registerUser(campos) {
       body: JSON.stringify({
         username: campos.username,
         password: campos.password,
+        email: campos.email || '',
         cedula: campos.cedula || '',
         name: campos.name,
         role: campos.role,

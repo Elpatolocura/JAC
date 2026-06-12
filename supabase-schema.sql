@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   id BIGSERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
+  email TEXT DEFAULT '',
   cedula TEXT DEFAULT '',
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario', 'Tesorero')),
@@ -43,6 +44,12 @@ CREATE INDEX IF NOT EXISTS idx_registros_barrio ON registros (barrio);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cedula TEXT DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT TRUE;
+
+-- Migraciones para tablas existentes
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_role_check;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_role_check CHECK (role IN ('Presidente', 'Secretario', 'Tesorero', 'Vocal', 'Fiscal', 'Comité'));
+-- ^ el CHECK se actualiza si se agregan roles en el futuro
 
 -- RLS para usuarios (necesario para getUsuarios)
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;

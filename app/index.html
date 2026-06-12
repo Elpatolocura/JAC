@@ -62,6 +62,10 @@
             <input type="text" id="regCedula" placeholder="Cédula del usuario">
           </div>
           <div class="form-group">
+            <label for="regEmail">Correo electrónico</label>
+            <input type="email" id="regEmail" placeholder="correo@ejemplo.com" required>
+          </div>
+          <div class="form-group">
             <label for="regCodigo">Código de registro</label>
             <input type="text" id="regCodigo" placeholder="Código proporcionado por el administrador" required>
           </div>
@@ -138,50 +142,45 @@
         });
 
         // ===== REGISTRO =====
-        async function cargarCiudades() {
+        var CIUDADES_BARRIOS = {
+            'Cartagena de Indias': ['Torices', 'El Progreso', 'Pie de la Popa', 'Manga', 'Bocagrande', 'Getsemaní', 'San Diego', 'La Matuna', 'El Bosque', 'Olaya Herrera'],
+            'Bogotá': ['Usaquén', 'Chapinero', 'Santa Fe', 'San Cristóbal', 'Usme', 'Bosa', 'Kennedy', 'Fontibón', 'Engativá', 'Suba'],
+            'Medellín': ['La Candelaria', 'La América', 'Robledo', 'Buenos Aires', 'Laureles', 'Estadio', 'Belén', 'El Poblado'],
+            'Cali': ['San Antonio', 'El Peñón', 'Granada', 'Ciudad Jardín', 'Chipichape', 'San Fernando', 'Santa Mónica'],
+            'Barranquilla': ['El Prado', 'Bellavista', 'Altagracia', 'Centro', 'Buenavista', 'Ciudad Jardín', 'Riomar'],
+            'Santa Marta': ['Centro Histórico', 'El Rodadero', 'Taganga', 'Mamatoco', 'Gaira', 'Pescaíto'],
+            'Bucaramanga': ['Cabecera del Llano', 'Sotomayor', 'La Concordia', 'San Francisco', 'El Prado', 'García Rovira'],
+            'Sincelejo': ['Centro', 'Las Majaguas', 'Puerta Roja', 'Santa Fe', 'La Palma', 'Chuchurubí'],
+            'Montería': ['Centro', 'La Castellana', 'Mocarí', 'Los Ángeles', 'Villa Gracia'],
+            'Pereira': ['Centro', 'Cuba', 'La Florida', 'El Poblado', 'San Joaquín'],
+            'Manizales': ['Centro', 'Palermo', 'La Estrella', 'La Fuente', 'Los Rosales'],
+            'Armenia': ['Centro', 'La Patria', 'Barcelona', 'San José', 'El Placer'],
+            'Cúcuta': ['Centro', 'La Playa', 'El Contento', 'San Luis', 'San Mateo'],
+            'Pasto': ['Centro', 'El Vergel', 'La Gran Colombia', 'Las Américas', 'Navarrete'],
+            'Ibagué': ['Centro', 'El Salado', 'Picaleña', 'La Estancia', 'La Pola'],
+            'Villavicencio': ['Centro', 'Bocas del Guatiquía', 'La Rosita', 'San Isidro', 'El Bambú'],
+            'Valledupar': ['Centro', 'La Popa', 'Primero de Mayo', 'San Joaquín', 'Los Cortijos'],
+            'Neiva': ['Centro', 'Las Américas', 'La Toma', 'Los Mártires', 'El Triunfo'],
+            'Popayán': ['Centro', 'El Empedrado', 'La Pamba', 'Santa Fe', 'El Recuerdo'],
+            'Quibdó': ['Centro', 'Ijujú', 'El Candil', 'Las Américas', 'Yerbabuena'],
+        };
+
+        function cargarCiudades() {
             var sel = document.getElementById('regCiudad');
-            sel.innerHTML = '<option value="">Cargando...</option>';
-            try {
-                var usuarios = await apiFetch('usuarios?select=ciudad&ciudad=neq.&order=ciudad.asc');
-                var registros = await apiFetch('registros?select=ciudad&ciudad=neq.&order=ciudad.asc');
-                var ciudades = {};
-                (usuarios || []).forEach(function (u) { if (u.ciudad) ciudades[u.ciudad] = true; });
-                (registros || []).forEach(function (r) { if (r.ciudad) ciudades[r.ciudad] = true; });
-                var lista = Object.keys(ciudades).sort();
-                if (lista.length === 0) {
-                    sel.innerHTML = '<option value="">No hay ciudades disponibles</option>';
-                } else {
-                    sel.innerHTML = '<option value="">Seleccioná una ciudad</option>' +
-                        lista.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
-                }
-            } catch (e) {
-                sel.innerHTML = '<option value="">Error al cargar</option>';
-            }
+            var lista = Object.keys(CIUDADES_BARRIOS).sort();
+            sel.innerHTML = '<option value="">Seleccioná una ciudad</option>' +
+                lista.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
         }
 
-        async function cargarBarrios(ciudad) {
+        function cargarBarrios(ciudad) {
             var sel = document.getElementById('regBarrio');
             if (!ciudad) {
                 sel.innerHTML = '<option value="">Primero seleccioná una ciudad</option>';
                 return;
             }
-            sel.innerHTML = '<option value="">Cargando...</option>';
-            try {
-                var usuarios = await apiFetch('usuarios?select=barrio&barrio=neq.&ciudad=eq.' + encodeURIComponent(ciudad) + '&order=barrio.asc');
-                var registros = await apiFetch('registros?select=barrio&barrio=neq.&ciudad=eq.' + encodeURIComponent(ciudad) + '&order=barrio.asc');
-                var barrios = {};
-                (usuarios || []).forEach(function (u) { if (u.barrio) barrios[u.barrio] = true; });
-                (registros || []).forEach(function (r) { if (r.barrio) barrios[r.barrio] = true; });
-                var lista = Object.keys(barrios).sort();
-                if (lista.length === 0) {
-                    sel.innerHTML = '<option value="">No hay barrios disponibles</option>';
-                } else {
-                    sel.innerHTML = '<option value="">Seleccioná un barrio</option>' +
-                        lista.map(function (b) { return '<option value="' + b + '">' + b + '</option>'; }).join('');
-                }
-            } catch (e) {
-                sel.innerHTML = '<option value="">Error al cargar</option>';
-            }
+            var barrios = CIUDADES_BARRIOS[ciudad] || [];
+            sel.innerHTML = '<option value="">Seleccioná un barrio</option>' +
+                barrios.map(function (b) { return '<option value="' + b + '">' + b + '</option>'; }).join('');
         }
 
         document.getElementById('btnRegistro').addEventListener('click', function () {
@@ -206,6 +205,7 @@
             const campos = {
                 username: document.getElementById('regUsername').value.trim(),
                 password: document.getElementById('regPassword').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
                 cedula: document.getElementById('regCedula').value.trim(),
                 codigo: document.getElementById('regCodigo').value.trim(),
                 name: document.getElementById('regName').value.trim(),
@@ -214,7 +214,7 @@
                 barrio: document.getElementById('regBarrio').value,
             };
 
-            if (!campos.username || !campos.password || !campos.codigo || !campos.name || !campos.role || !campos.ciudad || !campos.barrio) {
+            if (!campos.username || !campos.password || !campos.email || !campos.codigo || !campos.name || !campos.role || !campos.ciudad || !campos.barrio) {
                 msg.textContent = 'Todos los campos obligatorios deben estar diligenciados';
                 msg.className = 'msg error';
                 msg.style.display = 'block';
