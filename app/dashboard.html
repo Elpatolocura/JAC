@@ -377,6 +377,14 @@
 
             <div class="card">
                 <div class="card-title">📋 Reuniones</div>
+                <div style="display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);">
+                    <input type="text" id="reuFiltroTexto" placeholder="Buscar por título..." style="flex:1;min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;font-family:inherit;">
+                    <input type="date" id="reuFiltroFechaInicio" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;font-family:inherit;">
+                    <span style="font-size:0.8rem;color:var(--text-muted);">a</span>
+                    <input type="date" id="reuFiltroFechaFin" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;font-family:inherit;">
+                    <button class="btn-primary" id="btnFiltrarReu" style="width:auto;padding:6px 16px;font-size:0.8rem;">Filtrar</button>
+                    <button class="btn-primary" id="btnLimpiarFiltroReu" style="width:auto;padding:6px 16px;font-size:0.8rem;background:#6b7280;">Limpiar</button>
+                </div>
                 <div id="reunionesList"><p style="color:var(--text-muted);">Cargando...</p></div>
             </div>
 
@@ -1923,6 +1931,18 @@
                 var asistencia = await getAsistencia();
 
                 var reunionesBarrio = (reuniones || []).filter(function (r) { return r.barrio === sessionBarrio; });
+
+                // Aplicar filtros
+                var filtroTexto = (document.getElementById('reuFiltroTexto').value || '').toLowerCase();
+                var filtroInicio = document.getElementById('reuFiltroFechaInicio').value;
+                var filtroFin = document.getElementById('reuFiltroFechaFin').value;
+                reunionesBarrio = reunionesBarrio.filter(function (r) {
+                    if (filtroTexto && !r.titulo.toLowerCase().includes(filtroTexto)) return false;
+                    if (filtroInicio && r.fecha < filtroInicio) return false;
+                    if (filtroFin && r.fecha > filtroFin) return false;
+                    return true;
+                });
+
                 var container = document.getElementById('reunionesList');
 
                 if (reunionesBarrio.length === 0) {
@@ -2288,6 +2308,23 @@
                 alert('Error: ' + e.message);
             }
         }
+
+        // Filtros de reuniones
+        document.getElementById('btnFiltrarReu').addEventListener('click', function () {
+            var tab = document.querySelector('.tab-item.active');
+            if (tab && tab.getAttribute('data-tab') === 'tab-reuniones') {
+                renderReuniones().catch(function () {});
+            }
+        });
+        document.getElementById('btnLimpiarFiltroReu').addEventListener('click', function () {
+            document.getElementById('reuFiltroTexto').value = '';
+            document.getElementById('reuFiltroFechaInicio').value = '';
+            document.getElementById('reuFiltroFechaFin').value = '';
+            var tab = document.querySelector('.tab-item.active');
+            if (tab && tab.getAttribute('data-tab') === 'tab-reuniones') {
+                renderReuniones().catch(function () {});
+            }
+        });
 
         // Polling para solicitudes externas (cada 15 segundos)
         if (puedeCrearReuniones()) {
