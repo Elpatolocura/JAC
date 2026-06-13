@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JAC - Iniciar Sesión</title>
+    <meta name="theme-color" content="#003893">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JAC">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <link rel="stylesheet" href="css/style.css">
     <style>
         .login-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -250,6 +256,15 @@
                 btn.textContent = 'Crear usuario';
             }
         });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
     </script>
 </body>
 </html>
