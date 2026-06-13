@@ -194,6 +194,19 @@ async function saveActa(campos) {
   }
 }
 
+async function updateActa(id, campos) {
+  try {
+    const result = await apiFetch('actas?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify(campos),
+    });
+    return { ok: true, data: result && result.length > 0 ? result[0] : null };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function updateRegistro(id, campos) {
   try {
     const url = SUPABASE_URL + '/rest/v1/registros?id=eq.' + encodeURIComponent(id);

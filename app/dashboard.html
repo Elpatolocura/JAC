@@ -1425,14 +1425,16 @@
                 return;
             }
 
-            // Validar número de acta único en el barrio
-            var existentes = await getActas();
-            var duplicado = (existentes || []).find(function (a) { return a.numero === campos.numero; });
-            if (duplicado) {
-                msg.textContent = 'Ya existe un acta con el número ' + campos.numero + ' en ' + sessionBarrio;
-                msg.className = 'msg error';
-                msg.style.display = 'block';
-                return;
+            // Validar número de acta único en el barrio (solo si no es edición)
+            if (!tesoActaEditId) {
+                var existentes = await getActas();
+                var duplicado = (existentes || []).find(function (a) { return a.numero === campos.numero; });
+                if (duplicado) {
+                    msg.textContent = 'Ya existe un acta con el número ' + campos.numero + ' en ' + sessionBarrio;
+                    msg.className = 'msg error';
+                    msg.style.display = 'block';
+                    return;
+                }
             }
 
             var btn = this.querySelector('button');
@@ -1458,7 +1460,12 @@
                 }
             }
 
-            var result = await saveActa(campos);
+            var result;
+            if (tesoActaEditId) {
+                result = await updateActa(tesoActaEditId, campos);
+            } else {
+                result = await saveActa(campos);
+            }
 
             if (result.ok) {
                 msg.textContent = '✅ Acta guardada exitosamente';
@@ -1470,12 +1477,15 @@
                     var list = getMovimientosTeso();
                     if (tesoActaPendienteIdx < list.length) {
                         list[tesoActaPendienteIdx].acta_numero = document.getElementById('actaNumero').value.trim();
-                        list[tesoActaPendienteIdx].acta_id = result.data ? result.data.id : null;
+                        if (!tesoActaEditId) {
+                            list[tesoActaPendienteIdx].acta_id = result.data ? result.data.id : null;
+                        }
                         guardarMovimientosTeso(list);
                         renderTablaTeso();
                     }
                     tesoActaPendienteIdx = -1;
                 }
+                tesoActaEditId = null;
 
                 this.reset();
                 actaFotosArray = [];
@@ -1736,7 +1746,9 @@
                     '</td>' +
                     '<td style="text-align:center;">' +
                     (tieneActa
-                        ? '<button class="btn-ver-acta-teso" data-numero="' + m.acta_numero + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄 Acta #' + m.acta_numero + '</button>'
+                        ? '<div style="display:flex;gap:4px;justify-content:center;">' +
+                        '<button class="btn-ver-acta-teso" data-numero="' + m.acta_numero + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄</button>' +
+                        '<button class="btn-editar-acta-teso" data-idx="' + list.indexOf(m) + '" data-numero="' + m.acta_numero + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;">✏️</button></div>'
                         : (isReadOnly ? '' : '<button class="btn-acta-teso" data-idx="' + list.indexOf(m) + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄</button>')) +
                     '</td>' +
                     '</tr>';
@@ -1771,10 +1783,21 @@
                         }
                     });
                 });
+                tbody.querySelectorAll('.btn-editar-acta-teso').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        var num = this.dataset.numero;
+                        var idx = Number(this.dataset.idx);
+                        var actas = await getActas();
+                        var acta = (actas || []).find(function (a) { return a.numero === num && a.barrio === sessionBarrio; });
+                        if (!acta) { alert('Acta no encontrada'); return; }
+                        editarActaDesdeTeso(idx, acta);
+                    });
+                });
             }
         }
 
         var tesoActaPendienteIdx = -1;
+        var tesoActaEditId = null;
 
         async function crearActaParaMovimiento(idx) {
             var list = getMovimientosTeso();
@@ -1823,6 +1846,31 @@
             // Cambiar a la pestaña de Actas
             document.querySelector('.tab-item[data-tab="tab-actas"]').click();
             document.getElementById('actaNumero').focus();
+        }
+
+        function editarActaDesdeTeso(idx, acta) {
+            tesoActaPendienteIdx = idx;
+            tesoActaEditId = acta.id;
+
+            document.getElementById('formActa').reset();
+            document.getElementById('actaNumero').value = acta.numero || '';
+            document.getElementById('actaFecha').value = acta.fecha || '';
+            document.getElementById('actaHoraInicio').value = acta.hora_inicio || '';
+            document.getElementById('actaHoraFin').value = acta.hora_fin || '';
+            document.getElementById('actaLugar').value = acta.lugar || '';
+            document.getElementById('actaTipo').value = acta.tipo || '';
+            document.getElementById('actaOrdenDia').value = acta.orden_dia || '';
+            document.getElementById('actaDesarrollo').value = acta.desarrollo || '';
+            document.getElementById('actaAcuerdos').value = acta.acuerdos || '';
+
+            document.querySelector('.tab-item[data-tab="tab-actas"]').click();
+            document.getElementById('actaNumero').focus();
+
+            // Mostrar mensaje indicando que se está editando
+            var editMsg = document.getElementById('actaMsg');
+            editMsg.textContent = '✏️ Editando acta vinculada a movimiento de tesorería. Guardá los cambios.';
+            editMsg.className = 'msg info';
+            editMsg.style.display = 'block';
         }
 
         var tesoEditIdx = -1;
