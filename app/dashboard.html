@@ -1677,7 +1677,7 @@
                     '</td>' +
                     '<td style="text-align:center;">' +
                     (tieneActa
-                        ? '<span style="font-size:0.7rem;color:#059669;">Acta #' + m.acta_numero + '</span>'
+                        ? '<button class="btn-ver-acta-teso" data-numero="' + m.acta_numero + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄 Acta #' + m.acta_numero + '</button>'
                         : (isReadOnly ? '' : '<button class="btn-acta-teso" data-idx="' + list.indexOf(m) + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄</button>')) +
                     '</td>' +
                     '</tr>';
@@ -1697,6 +1697,19 @@
                 tbody.querySelectorAll('.btn-acta-teso').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         crearActaParaMovimiento(Number(this.dataset.idx));
+                    });
+                });
+                tbody.querySelectorAll('.btn-ver-acta-teso').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        var num = this.dataset.numero;
+                        var actas = await getActas();
+                        var acta = (actas || []).find(function (a) { return a.numero === num && a.barrio === sessionBarrio; });
+                        if (acta) {
+                            if (window._actasCache) window._actasCache = actas;
+                            mostrarActaCompleta(acta);
+                        } else {
+                            alert('Acta no encontrada');
+                        }
                     });
                 });
             }
