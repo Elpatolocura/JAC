@@ -375,6 +375,14 @@
                 </form>
             </div>
 
+            <div class="card" id="invitacionesCard">
+                <div class="card-title">
+                    ✉️ Invitaciones pendientes
+                    <span id="invitacionesCount" style="font-size:0.75rem;background:var(--red);color:white;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;"></span>
+                </div>
+                <div id="invitacionesList"><p style="color:var(--text-muted);">Cargando...</p></div>
+            </div>
+
             <div class="card">
                 <div class="card-title">📋 Reuniones</div>
                 <div id="reunionesList"><p style="color:var(--text-muted);">Cargando...</p></div>
@@ -1916,12 +1924,36 @@
                 document.getElementById('solicitudesExternasCard').style.display = 'none';
             }
 
-            // Renderizar lista de reuniones
+            // Renderizar invitaciones pendientes del usuario
             try {
                 var reuniones = await getReuniones();
                 var invitaciones = await getInvitaciones();
                 var externos = await getInvitadosExternos();
                 var asistencia = await getAsistencia();
+
+                var misInvitaciones = (invitaciones || []).filter(function (i) { return i.invitado_username === sessionUsername; });
+                var pendientes = misInvitaciones.filter(function (i) { return i.estado === 'pendiente'; });
+                var invitContainer = document.getElementById('invitacionesList');
+                var countBadge = document.getElementById('invitacionesCount');
+                countBadge.textContent = pendientes.length > 0 ? pendientes.length : '';
+                if (pendientes.length === 0) {
+                    invitContainer.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px 0;">No tenés invitaciones pendientes</p>';
+                } else {
+                    invitContainer.innerHTML = pendientes.map(function (inv) {
+                        var reu = (reuniones || []).find(function (r) { return r.id == inv.reunion_id; });
+                        if (!reu) return '';
+                        return '<div class="acta-card" style="margin-bottom:8px;border-left:3px solid #f59e0b;">' +
+                            '<div class="acta-card-header">' +
+                            '<span class="acta-card-num">' + reu.titulo + '</span>' +
+                            '<span class="acta-card-meta">' + reu.fecha + '</span>' +
+                            '</div>' +
+                            '<div class="acta-card-detail">' + reu.hora_inicio + ' · ' + reu.duracion_minutos + 'min · Creada por ' + (reu.creado_por || '—') + '</div>' +
+                            '<div class="acta-card-footer" style="gap:6px;">' +
+                            '<button class="acta-card-btn" onclick="confirmarInvitacion(' + inv.id + ',' + reu.id + ')">✅ Confirmar</button>' +
+                            '<button class="acta-card-btn" style="background:#fee2e2;color:#dc2626;" onclick="rechazarInvitacion(' + inv.id + ')">❌ Rechazar</button>' +
+                            '</div></div>';
+                    }).join('');
+                }
 
                 var reunionesBarrio = (reuniones || []).filter(function (r) { return r.barrio === sessionBarrio; });
                 var container = document.getElementById('reunionesList');
