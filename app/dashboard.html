@@ -592,6 +592,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="js/supabase.js"></script>
+    <!-- Modal crear acta desde tesorería -->
+    <div id="modalActaTeso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;text-align:center;">
+        <button onclick="document.getElementById('modalActaTeso').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div style="font-size:2.5rem;margin-bottom:12px;">📄</div>
+        <h3 style="margin-bottom:8px;">Crear acta para este movimiento</h3>
+        <div id="modalActaTesoInfo" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:20px;line-height:1.6;"></div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button id="btnModalActaTesoCancelar" style="padding:12px 24px;border:1px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;cursor:pointer;font-family:inherit;">Cancelar</button>
+          <button id="btnModalActaTesoConfirmar" style="padding:12px 24px;border:none;border-radius:10px;background:var(--blue, #2563eb);color:white;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;">✅ Sí, crear acta</button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/db.js"></script>
     <script>
         // ===== SESSION =====
@@ -1734,8 +1748,24 @@
             var list = getMovimientosTeso();
             if (idx < 0 || idx >= list.length) return;
             var m = list[idx];
-            if (!confirm('¿Crear un acta para este movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' por $' + Number(m.valor).toLocaleString('es-CO') + '?')) return;
+            var tipo = m.categoria === 'ingreso' ? 'Ingreso' : 'Egreso';
+            var valorFormateado = '$' + Number(m.valor).toLocaleString('es-CO');
 
+            // Mostrar el modal de confirmación
+            document.getElementById('modalActaTesoInfo').innerHTML =
+                '<strong>' + tipo + '</strong> por <strong>' + valorFormateado + '</strong><br>' +
+                '<span style="font-size:0.85rem;">' + m.descripcion + ' — ' + m.fecha + '</span>';
+            document.getElementById('modalActaTeso').style.display = 'flex';
+            document.getElementById('btnModalActaTesoConfirmar').onclick = async function () {
+                document.getElementById('modalActaTeso').style.display = 'none';
+                await prepararFormularioActa(idx, m);
+            };
+            document.getElementById('btnModalActaTesoCancelar').onclick = function () {
+                document.getElementById('modalActaTeso').style.display = 'none';
+            };
+        }
+
+        async function prepararFormularioActa(idx, m) {
             // Obtener el siguiente número de acta sugerido
             var actasExistentes = await getActas();
             var actasBarrio = (actasExistentes || []).filter(function (a) { return a.barrio === sessionBarrio; });
