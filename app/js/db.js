@@ -183,11 +183,12 @@ async function getActas() {
 
 async function saveActa(campos) {
   try {
-    await apiFetch('actas', {
+    const result = await apiFetch('actas', {
       method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
       body: JSON.stringify(campos),
     });
-    return { ok: true };
+    return { ok: true, data: result && result.length > 0 ? result[0] : null };
   } catch (err) {
     return { ok: false, error: err.message };
   }

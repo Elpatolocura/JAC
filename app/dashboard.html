@@ -297,6 +297,14 @@
                     <h4>📋 Movimientos</h4>
                     <button class="btn-primary" id="btnExportarTeso" style="width:auto;padding:8px 20px;font-size:0.85rem;margin:0;">📥 Exportar</button>
                 </div>
+                <div style="display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);">
+                    <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);">Filtrar por fecha:</label>
+                    <input type="date" id="tesoFiltroInicio" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;font-family:inherit;">
+                    <span style="font-size:0.8rem;color:var(--text-muted);">a</span>
+                    <input type="date" id="tesoFiltroFin" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;font-family:inherit;">
+                    <button class="btn-primary" id="btnFiltrarTeso" style="width:auto;padding:6px 16px;font-size:0.8rem;">Filtrar</button>
+                    <button class="btn-primary" id="btnLimpiarFiltroTeso" style="width:auto;padding:6px 16px;font-size:0.8rem;background:#6b7280;">Mostrar todos</button>
+                </div>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -308,6 +316,7 @@
                                 <th>Valor</th>
                                 <th>Saldo</th>
                                 <th style="width:90px;">Acción</th>
+                                <th style="width:70px;">Acta</th>
                             </tr>
                         </thead>
                         <tbody id="tablaTesoreria"></tbody>
@@ -1613,16 +1622,30 @@
             return { ingresos: ingresos, egresos: egresos, saldo: ingresos - egresos };
         }
 
+        var tesoFiltroActivo = null;
+
         function renderTablaTeso() {
             var list = getMovimientosTeso();
-            var s = calcularSaldosTeso(list);
+            var filtroInicio = document.getElementById('tesoFiltroInicio').value;
+            var filtroFin = document.getElementById('tesoFiltroFin').value;
+
+            var filtrada = list;
+            if (filtroInicio || filtroFin) {
+                filtrada = list.filter(function (m) {
+                    if (filtroInicio && m.fecha < filtroInicio) return false;
+                    if (filtroFin && m.fecha > filtroFin) return false;
+                    return true;
+                });
+            }
+
+            var s = calcularSaldosTeso(filtrada);
             document.getElementById('tesoSaldoActual').textContent = '$' + s.saldo.toLocaleString('es-CO');
             document.getElementById('tesoTotalIngresos').textContent = '$' + s.ingresos.toLocaleString('es-CO');
             document.getElementById('tesoTotalEgresos').textContent = '$' + s.egresos.toLocaleString('es-CO');
 
             var tbody = document.getElementById('tablaTesoreria');
             var empty = document.getElementById('tesoEmpty');
-            if (list.length === 0) {
+            if (filtrada.length === 0) {
                 tbody.innerHTML = '';
                 empty.style.display = 'block';
                 return;
@@ -1630,9 +1653,10 @@
             empty.style.display = 'none';
 
             var saldoAcum = 0;
-            tbody.innerHTML = list.map(function (m, i) {
+            tbody.innerHTML = filtrada.map(function (m, i) {
                 saldoAcum += (m.categoria === 'ingreso' ? Number(m.valor) : -Number(m.valor));
                 var cls = m.categoria === 'ingreso' ? 'style="color:#059669;font-weight:600;"' : 'style="color:#dc2626;font-weight:600;"';
+                var tieneActa = m.acta_numero ? true : false;
                 return '<tr>' +
                     '<td>' + (i + 1) + '</td>' +
                     '<td>' + m.fecha + '</td>' +
@@ -1641,8 +1665,13 @@
                     '<td ' + cls + '>$' + Number(m.valor).toLocaleString('es-CO') + '</td>' +
                     '<td>$' + saldoAcum.toLocaleString('es-CO') + '</td>' +
                     '<td style="white-space:nowrap;">' +
-                    (isReadOnly ? '' : '<button class="btn-editar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;margin-right:4px;">✏️</button>' +
-                    '<button class="btn-eliminar-teso" data-idx="' + i + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;">🗑</button>') +
+                    (isReadOnly ? '' : '<button class="btn-editar-teso" data-idx="' + list.indexOf(m) + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;margin-right:4px;">✏️</button>' +
+                    '<button class="btn-eliminar-teso" data-idx="' + list.indexOf(m) + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;">🗑</button>') +
+                    '</td>' +
+                    '<td style="text-align:center;">' +
+                    (tieneActa
+                        ? '<span style="font-size:0.7rem;color:#059669;">Acta #' + m.acta_numero + '</span>'
+                        : (isReadOnly ? '' : '<button class="btn-acta-teso" data-idx="' + list.indexOf(m) + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#ecfdf5;color:#059669;cursor:pointer;">📄</button>')) +
                     '</td>' +
                     '</tr>';
             }).join('');
@@ -1658,6 +1687,56 @@
                         eliminarMovimientoTeso(Number(this.dataset.idx));
                     });
                 });
+                tbody.querySelectorAll('.btn-acta-teso').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        crearActaParaMovimiento(Number(this.dataset.idx));
+                    });
+                });
+            }
+        }
+
+        async function crearActaParaMovimiento(idx) {
+            var list = getMovimientosTeso();
+            if (idx < 0 || idx >= list.length) return;
+            var m = list[idx];
+            if (!confirm('¿Crear un acta para este movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' por $' + Number(m.valor).toLocaleString('es-CO') + '?')) return;
+
+            // Obtener el siguiente número de acta para este barrio
+            var actasExistentes = await getActas();
+            var actasBarrio = (actasExistentes || []).filter(function (a) { return a.barrio === sessionBarrio; });
+            var maxNum = 0;
+            actasBarrio.forEach(function (a) { var n = parseInt(a.numero, 10); if (n > maxNum) maxNum = n; });
+            var nextNum = maxNum + 1;
+
+            var actaData = {
+                numero: String(nextNum),
+                fecha: m.fecha,
+                hora: '10:00',
+                lugar: sessionBarrio + ', ' + (sessionCiudad || ''),
+                tipo: 'Acta de Tesorería',
+                orden_del_dia: 'Registro de movimiento',
+                desarrollo: 'Movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' en Tesorería: ' + m.descripcion + ' por $' + Number(m.valor).toLocaleString('es-CO'),
+                acuerdos: 'Se aprueba el movimiento registrado.',
+                imagenes: '',
+                barrio: sessionBarrio,
+                ciudad: sessionCiudad || '',
+                creado_por: sessionUsername,
+            };
+
+            try {
+                var result = await saveActa(actaData);
+                if (result && result.ok) {
+                    m.acta_numero = nextNum;
+                    m.acta_id = result.data ? result.data.id : null;
+                    list[idx] = m;
+                    guardarMovimientosTeso(list);
+                    renderTablaTeso();
+                    alert('✅ Acta #' + nextNum + ' creada y vinculada al movimiento.');
+                } else {
+                    alert('Error al crear el acta: ' + (result ? result.error : 'Error desconocido'));
+                }
+            } catch (e) {
+                alert('Error al crear el acta: ' + e.message);
             }
         }
 
@@ -1786,6 +1865,16 @@
             URL.revokeObjectURL(link.href);
         });
 
+        // Filtros de tesorería
+        document.getElementById('btnFiltrarTeso').addEventListener('click', function () {
+            renderTablaTeso();
+        });
+        document.getElementById('btnLimpiarFiltroTeso').addEventListener('click', function () {
+            document.getElementById('tesoFiltroInicio').value = '';
+            document.getElementById('tesoFiltroFin').value = '';
+            renderTablaTeso();
+        });
+
         // Cargar tesorería al iniciar si el usuario puede verla
         if (sessionRole === 'Tesorero' || sessionRole === 'Presidente') {
             renderTablaTeso();
@@ -1873,6 +1962,8 @@
                         } else if (miInvitacion && miInvitacion.estado === 'confirmada') {
                             puedeUnirse = true;
                         } else if (miExterno && miExterno.estado === 'aprobado') {
+                            puedeUnirse = true;
+                        } else if (sessionRole && sessionRole !== '') {
                             puedeUnirse = true;
                         }
                     }
