@@ -49,6 +49,7 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT T
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_role_check;
 ALTER TABLE usuarios ADD CONSTRAINT usuarios_role_check CHECK (role IN ('Presidente', 'Secretario', 'Tesorero', 'Vocal', 'Fiscal', 'Comité'));
+ALTER TABLE actas ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
 -- ^ el CHECK se actualiza si se agregan roles en el futuro
 
 -- RLS para usuarios (necesario para getUsuarios)

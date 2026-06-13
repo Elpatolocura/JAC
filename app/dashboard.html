@@ -1718,15 +1718,15 @@
             var actaData = {
                 numero: String(nextNum),
                 fecha: m.fecha,
-                hora: '10:00',
+                hora_inicio: '10:00',
+                hora_fin: '10:30',
                 lugar: sessionBarrio + ', ' + (sessionCiudad || ''),
                 tipo: 'Acta de Tesorería',
-                orden_del_dia: 'Registro de movimiento',
+                orden_dia: 'Registro de movimiento',
                 desarrollo: 'Movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' en Tesorería: ' + m.descripcion + ' por $' + Number(m.valor).toLocaleString('es-CO'),
                 acuerdos: 'Se aprueba el movimiento registrado.',
                 imagenes: '',
                 barrio: sessionBarrio,
-                ciudad: sessionCiudad || '',
                 creado_por: sessionUsername,
             };
 
