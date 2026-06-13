@@ -23,7 +23,7 @@
             <div class="user-menu">
                 <button class="user-menu-btn" id="menuToggle" title="Menú">⚙️</button>
                 <div class="user-menu-dropdown" id="userDropdown">
-                    <button id="btnInstalarApp" style="display:none;">📲 Instalar app</button>
+                    <button id="btnInstalarApp">📲 Instalar app</button>
                     <button id="btnCambiarPassTop">🔑 Cambiar contraseña</button>
                     <button id="btnPoliticas">🛡️ Política de seguridad</button>
                     <button id="btnSoporte">💬 Soporte</button>
@@ -693,10 +693,14 @@
         var deferredPrompt = null;
         var instalarBtn = document.getElementById('btnInstalarApp');
 
+        // Ocultar si ya está instalado (display-mode: standalone)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            instalarBtn.style.display = 'none';
+        }
+
         window.addEventListener('beforeinstallprompt', function (e) {
             e.preventDefault();
             deferredPrompt = e;
-            instalarBtn.style.display = '';
         });
 
         window.addEventListener('appinstalled', function () {
@@ -705,12 +709,24 @@
         });
 
         instalarBtn.addEventListener('click', async function () {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            var result = await deferredPrompt.userChoice;
-            if (result.outcome === 'accepted') {
-                deferredPrompt = null;
-                instalarBtn.style.display = 'none';
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                var result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    deferredPrompt = null;
+                    instalarBtn.style.display = 'none';
+                }
+            } else {
+                // Si ya está instalado o no hay evento, mostrar instrucciones
+                if (window.matchMedia('(display-mode: standalone)').matches) {
+                    alert('La aplicación ya está instalada.');
+                    instalarBtn.style.display = 'none';
+                } else {
+                    alert('Para instalar la app en tu dispositivo:\n\n' +
+                        '• Android (Chrome): Tocá el menú ⋮ → "Instalar aplicación"\n' +
+                        '• iPhone (Safari): Tocá el ícono 📤 → "Agregar a pantalla de inicio"\n' +
+                        '• Escritorio (Chrome/Edge): Tocá el ícono de instalación en la barra de direcciones.');
+                }
             }
         });
 
