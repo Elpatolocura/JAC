@@ -1811,9 +1811,11 @@
                     var miembrosUsu = (todosUsu || []).filter(function (u) { return u.barrio === sessionBarrio; });
                     window._reuMiembros = [];
                     miembrosUsu.forEach(function (u) {
+                        if (u.username === sessionUsername) return;
                         window._reuMiembros.push({ value: u.username, nombre: u.name, grupo: 'directiva', rol: u.role, iniciales: u.name.split(' ').map(function(s){return s[0];}).join('').substring(0,2).toUpperCase() });
                     });
                     miembrosReg.forEach(function (m) {
+                        if (m.cedula === sessionCedula) return;
                         window._reuMiembros.push({ value: m.cedula, nombre: m.nombres + ' ' + m.apellidos, grupo: 'afiliado', rol: 'Afiliado', iniciales: (m.nombres[0] + (m.apellidos ? m.apellidos[0] : '')).toUpperCase() });
                     });
                     renderMiembrosLista();
