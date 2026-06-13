@@ -1418,6 +1418,19 @@
                 msg.textContent = '✅ Acta guardada exitosamente';
                 msg.className = 'msg success';
                 msg.style.display = 'block';
+
+                // Vincular con movimiento de tesorería pendiente
+                if (tesoActaPendienteIdx >= 0) {
+                    var list = getMovimientosTeso();
+                    if (tesoActaPendienteIdx < list.length) {
+                        list[tesoActaPendienteIdx].acta_numero = document.getElementById('actaNumero').value.trim();
+                        list[tesoActaPendienteIdx].acta_id = result.data ? result.data.id : null;
+                        guardarMovimientosTeso(list);
+                        renderTablaTeso();
+                    }
+                    tesoActaPendienteIdx = -1;
+                }
+
                 this.reset();
                 actaFotosArray = [];
                 document.getElementById('actaFotosPreview').innerHTML = '';
@@ -1715,49 +1728,39 @@
             }
         }
 
+        var tesoActaPendienteIdx = -1;
+
         async function crearActaParaMovimiento(idx) {
             var list = getMovimientosTeso();
             if (idx < 0 || idx >= list.length) return;
             var m = list[idx];
             if (!confirm('¿Crear un acta para este movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' por $' + Number(m.valor).toLocaleString('es-CO') + '?')) return;
 
-            // Obtener el siguiente número de acta para este barrio
+            // Obtener el siguiente número de acta sugerido
             var actasExistentes = await getActas();
             var actasBarrio = (actasExistentes || []).filter(function (a) { return a.barrio === sessionBarrio; });
             var maxNum = 0;
             actasBarrio.forEach(function (a) { var n = parseInt(a.numero, 10); if (n > maxNum) maxNum = n; });
             var nextNum = maxNum + 1;
 
-            var actaData = {
-                numero: String(nextNum),
-                fecha: m.fecha,
-                hora_inicio: '10:00',
-                hora_fin: '10:30',
-                lugar: sessionBarrio + ', ' + (sessionCiudad || ''),
-                tipo: 'Acta de Tesorería',
-                orden_dia: 'Registro de movimiento',
-                desarrollo: 'Movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' en Tesorería: ' + m.descripcion + ' por $' + Number(m.valor).toLocaleString('es-CO'),
-                acuerdos: 'Se aprueba el movimiento registrado.',
-                imagenes: '',
-                barrio: sessionBarrio,
-                creado_por: sessionUsername,
-            };
+            // Pre-llenar el formulario de actas
+            document.getElementById('formActa').reset();
+            document.getElementById('actaNumero').value = nextNum;
+            document.getElementById('actaFecha').value = m.fecha;
+            document.getElementById('actaHoraInicio').value = '10:00';
+            document.getElementById('actaHoraFin').value = '10:30';
+            document.getElementById('actaLugar').value = sessionBarrio + ', ' + (sessionCiudad || '');
+            document.getElementById('actaTipo').value = 'Acta de Tesorería';
+            document.getElementById('actaOrdenDia').value = 'Registro de movimiento';
+            document.getElementById('actaDesarrollo').value = 'Movimiento de ' + (m.categoria === 'ingreso' ? 'ingreso' : 'egreso') + ' en Tesorería: ' + m.descripcion + ' por $' + Number(m.valor).toLocaleString('es-CO');
+            document.getElementById('actaAcuerdos').value = 'Se aprueba el movimiento registrado.';
 
-            try {
-                var result = await saveActa(actaData);
-                if (result && result.ok) {
-                    m.acta_numero = nextNum;
-                    m.acta_id = result.data ? result.data.id : null;
-                    list[idx] = m;
-                    guardarMovimientosTeso(list);
-                    renderTablaTeso();
-                    alert('✅ Acta #' + nextNum + ' creada y vinculada al movimiento.');
-                } else {
-                    alert('Error al crear el acta: ' + (result ? result.error : 'Error desconocido'));
-                }
-            } catch (e) {
-                alert('Error al crear el acta: ' + e.message);
-            }
+            // Guardar referencia para vincular después de guardar
+            tesoActaPendienteIdx = idx;
+
+            // Cambiar a la pestaña de Actas
+            document.querySelector('.tab-item[data-tab="tab-actas"]').click();
+            document.getElementById('actaNumero').focus();
         }
 
         var tesoEditIdx = -1;
