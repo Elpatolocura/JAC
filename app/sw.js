@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jac-cache-v2';
+const CACHE_NAME = 'jac-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -6,7 +6,9 @@ const STATIC_ASSETS = [
   '/reunion.html',
   '/css/style.css',
   '/js/supabase.js',
+  '/js/supabase-client.js',
   '/js/db.js',
+  '/js/notificaciones.js',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
