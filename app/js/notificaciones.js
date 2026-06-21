@@ -1,35 +1,22 @@
 // ===== CONFIGURACIÓN DE EMAIL (EmailJS) =====
-var EMAILJS_CONFIG_KEY = 'jac_emailjs_config';
-
-function getEmailJSConfig() {
-  try { return JSON.parse(localStorage.getItem(EMAILJS_CONFIG_KEY)) || {}; } catch { return {}; }
-}
-
-function saveEmailJSConfig(config) {
-  localStorage.setItem(EMAILJS_CONFIG_KEY, JSON.stringify(config));
-}
+var EMAILJS_PUBLIC_KEY = 'dHvymfFP3YNmhEzge';
+var EMAILJS_SERVICE_ID = 'service_xqnuxrp';
+var EMAILJS_TEMPLATE_ID = 'template-gbvg0ah';
 
 async function enviarNotificacionCorreo(destinatario, asunto, mensaje) {
-  var config = getEmailJSConfig();
-  if (!config.publicKey || !config.serviceId || !config.templateId) {
-    console.warn('EmailJS no configurado. Guardá las credenciales en Ajustes → Configurar correo');
-    return { ok: false, error: 'EmailJS no configurado' };
-  }
-
   try {
     var res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        service_id: config.serviceId,
-        template_id: config.templateId,
-        user_id: config.publicKey,
+        service_id: EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id: EMAILJS_PUBLIC_KEY,
         template_params: {
           to_email: destinatario.email,
           to_name: destinatario.nombre || destinatario.email,
           subject: asunto,
           message: mensaje,
-          reply_to: config.replyTo || '',
         },
       }),
     });
