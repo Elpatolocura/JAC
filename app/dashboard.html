@@ -670,14 +670,14 @@
             var sessionTelefono = '';
             var isReadOnly = false;
         (async function () {
-            const { data: { session } } = await supabaseGetSession();
-            if (!session) {
+            const { data: { session: authSession } } = await supabaseGetSession();
+            if (!authSession) {
                 localStorage.removeItem('jac_session');
                 window.location.href = 'index.html';
                 return;
             }
 
-            const userEmail = session.user.email;
+            const userEmail = authSession.user.email;
 
             // Fetch profile from usuarios first
             let perfil = null;
