@@ -3,11 +3,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_BdYoJTpc0IkjCtHoarj6YQ_PVeSJlBt';
 
 async function getAuthHeaders() {
   try {
-    const token = localStorage.getItem('sb-access-token');
-    if (token) {
+    const { data: { session } } = await supabaseGetSession();
+    if (session?.access_token) {
       return {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + token,
+        'Authorization': 'Bearer ' + session.access_token,
         'Content-Type': 'application/json',
       };
     }
