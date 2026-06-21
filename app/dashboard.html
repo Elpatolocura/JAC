@@ -24,7 +24,7 @@
                 <button class="user-menu-btn" id="menuToggle" title="Menú">⚙️</button>
                 <div class="user-menu-dropdown" id="userDropdown">
                     <button id="btnInstalarApp">📲 Instalar app</button>
-
+                    <button id="btnTestEmail">📧 Probar correo</button>
                     <button id="btnCambiarPassTop">🔑 Cambiar contraseña</button>
                     <button id="btnPoliticas">🛡️ Política de seguridad</button>
                     <button id="btnSoporte">💬 Soporte</button>
@@ -785,6 +785,21 @@
         document.getElementById('btnSoporte').addEventListener('click', function () {
             document.getElementById('userDropdown').classList.remove('show');
             document.getElementById('modalSoporte').style.display = 'flex';
+        });
+        document.getElementById('btnTestEmail').addEventListener('click', async function () {
+            document.getElementById('userDropdown').classList.remove('show');
+            var email = prompt('Correo de prueba:');
+            if (!email) return;
+            var r = await enviarNotificacionCorreo(
+                { email: email, nombre: 'Test JAC' },
+                'Prueba desde JAC',
+                'Este es un correo de prueba. Si recibís esto, EmailJS funciona correctamente.'
+            );
+            if (r.ok) {
+                alert('✅ Correo enviado correctamente a ' + email);
+            } else {
+                alert('❌ Error: ' + r.error + '\n\nAbrí la consola (F12) para más detalles.');
+            }
         });
 
 

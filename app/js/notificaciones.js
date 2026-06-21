@@ -24,7 +24,8 @@ async function enviarNotificacionCorreo(destinatario, asunto, mensaje) {
       return { ok: true };
     }
     var text = await res.text();
-    return { ok: false, error: text };
+    console.error('EmailJS error response:', res.status, text);
+    return { ok: false, error: 'HTTP ' + res.status + ': ' + text };
   } catch (err) {
     return { ok: false, error: err.message };
   }
