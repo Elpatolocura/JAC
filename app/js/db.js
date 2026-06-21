@@ -112,6 +112,7 @@ async function registerUser(campos) {
         username: campos.username,
         password: campos.password,
         email: campos.email || '',
+        telefono: campos.telefono || '',
         cedula: campos.cedula || '',
         name: campos.name,
         role: campos.role,

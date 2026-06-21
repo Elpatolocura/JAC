@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JAC - Sistema</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#003893">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="JAC">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body class="app-body">
     <header class="topbar">
@@ -23,8 +26,16 @@
             <div class="user-menu">
                 <button class="user-menu-btn" id="menuToggle" title="Menú">⚙️</button>
                 <div class="user-menu-dropdown" id="userDropdown">
+                    <div class="dropdown-tabs-mobile">
+                        <button class="dropdown-tab-item" data-tab="tab-inscripcion">📝 Inscripción</button>
+                        <button class="dropdown-tab-item" data-tab="tab-consultar">🔍 Consultar</button>
+                        <button class="dropdown-tab-item" data-tab="tab-certificados">📜 Certificados</button>
+                        <button class="dropdown-tab-item" data-tab="tab-actas">📋 Actas</button>
+                        <button class="dropdown-tab-item" data-tab="tab-tesoreria">💰 Tesorería</button>
+                        <button class="dropdown-tab-item" data-tab="tab-reuniones">📅 Reuniones</button>
+                        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0;">
+                    </div>
                     <button id="btnInstalarApp">📲 Instalar app</button>
-                    <button id="btnTestEmail">📧 Probar correo</button>
                     <button id="btnCambiarPassTop">🔑 Cambiar contraseña</button>
                     <button id="btnPoliticas">🛡️ Política de seguridad</button>
                     <button id="btnSoporte">💬 Soporte</button>
@@ -37,8 +48,9 @@
     <div class="content">
         <!-- TAB 1: Formulario de Inscripción -->
         <section class="page active" id="tab-inscripcion">
+            <div class="page-header">📝 Inscripción</div>
             <div class="card">
-                <div class="card-title">📝 Formulario de Inscripción</div>
+                <div class="card-title">Formulario de Inscripción</div>
                 <form id="formInscripcion">
                     <div class="form-row">
                         <div class="form-group">
@@ -58,6 +70,12 @@
                         <div class="form-group">
                             <label for="telefono">Teléfono</label>
                             <input type="tel" id="telefono" placeholder="Ej: 3001234567" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inscEmail">Correo electrónico</label>
+                            <input type="email" id="inscEmail" placeholder="correo@ejemplo.com">
                         </div>
                     </div>
                     <div class="form-row">
@@ -83,8 +101,9 @@
 
         <!-- TAB 2: Consultar Registros -->
         <section class="page" id="tab-consultar">
+            <div class="page-header">🔍 Consultar</div>
             <div class="card">
-                <div class="card-title">🔍 Consultar Registros</div>
+                <div class="card-title">Consultar Registros</div>
                 <div class="form-group" style="margin:0;">
                     <label for="buscarCedula">Buscar por N° Cédula</label>
                     <div style="display:flex;gap:8px;">
@@ -108,6 +127,7 @@
                                 <th>Apellidos</th>
                                 <th>Cédula</th>
                                 <th>Teléfono</th>
+                                <th>Correo</th>
                                 <th>Dirección</th>
                                 <th>Ciudad</th>
                                 <th>Barrio</th>
@@ -129,8 +149,9 @@
 
         <!-- TAB 3: Certificados -->
         <section class="page" id="tab-certificados">
+            <div class="page-header">📜 Certificados</div>
             <div class="card">
-                <div class="card-title">📜 Certificado de Vivienda</div>
+                <div class="card-title">Certificado de Vivienda</div>
                 <div class="form-group" style="margin:0;">
                     <label for="certCedula">N° Cédula del afiliado</label>
                     <div style="display:flex;gap:8px;">
@@ -197,8 +218,9 @@
 
         <!-- TAB 4: Actas -->
         <section class="page" id="tab-actas">
+            <div class="page-header">📄 Actas</div>
             <div class="card">
-                <div class="card-title">📄 Acta de Reunión</div>
+                <div class="card-title">Acta de Reunión</div>
                 <form id="formActa">
                     <div class="form-row">
                         <div class="form-group">
@@ -260,8 +282,9 @@
 
         <!-- TAB 5: Libro Tesorería -->
         <section class="page" id="tab-tesoreria">
+            <div class="page-header">💰 Tesorería</div>
             <div class="card">
-                <div class="card-title">💰 Libro de Tesorería</div>
+                <div class="card-title">Libro de Tesorería</div>
                 <div class="stat-bar" style="margin-bottom:16px;">
                     <div class="stat-chip"><span class="num" id="tesoSaldoActual">$0</span><span class="label">Saldo actual</span></div>
                     <div class="stat-chip"><span class="num" id="tesoTotalIngresos">$0</span><span class="label">Total ingresos</span></div>
@@ -339,8 +362,9 @@
 
         <!-- TAB 6: Reuniones / Videollamadas -->
         <section class="page" id="tab-reuniones">
+            <div class="page-header">📅 Reuniones</div>
             <div class="card" id="crearReunionCard">
-                <div class="card-title">📅 Crear Reunión</div>
+                <div class="card-title">Crear Reunión</div>
                 <form id="formReunion">
                     <div class="form-row">
                         <div class="form-group">
@@ -367,7 +391,7 @@
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
                             <input type="text" id="reuFiltrarMiembros" placeholder="Buscar miembro..." style="flex:1;min-width:140px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;">
                             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <span id="reuSeleccionadosCount" style="font-size:0.8rem;color:var(--text-muted);align-self:center;">0 seleccionados</span>
+                                <span id="reuSeleccionadosCount" style="font-size:0.8rem;color:var(--text-muted);align-self:center;">0 seleccionados (mín. 2)</span>
                                 <button type="button" id="btnSeleccionarTodos" style="padding:6px 12px;border:1px solid var(--blue);border-radius:8px;background:white;color:var(--blue);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">✓ Todos</button>
                                 <button type="button" id="btnDeseleccionarTodos" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-muted);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">✕ Ninguno</button>
                             </div>
@@ -378,7 +402,19 @@
                         <label for="reuExternos">Cédulas de externos (una por línea)</label>
                         <textarea id="reuExternos" placeholder="12345678&#10;87654321" style="min-height:60px;"></textarea>
                     </div>
-                    <button type="submit" class="btn-primary">📅 Crear Reunión</button>
+                    <div class="form-group">
+                        <label style="font-size:0.85rem;color:var(--text-muted);display:block;margin-bottom:6px;">Notificaciones</label>
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                                <input type="checkbox" id="reuNotifEmail" checked> 📧 Correo
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                                <input type="checkbox" id="reuNotifWhatsApp" checked> 📱 WhatsApp
+                            </label>
+                        </div>
+                    </div>
+                    <div id="reuHint" style="font-size:0.78rem;color:#dc2626;margin-bottom:8px;display:none;"></div>
+                    <button type="submit" class="btn-primary" id="btnCrearReunion" disabled>📅 Crear Reunión</button>
                     <div class="msg" id="reuMsg"></div>
                 </form>
             </div>
@@ -430,12 +466,12 @@
         </button>
     </nav>
     <!-- Modal videollamada Jitsi -->
-    <div id="modalJitsi" style="display:none;position:fixed;inset:0;z-index:1001;background:white;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--blue);color:white;">
-            <span id="jitsiReunionTitulo" style="font-weight:600;">Reunión</span>
-            <button id="btnSalirReunion" style="background:var(--red);color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;">✕ Salir</button>
+    <div id="modalJitsi" style="display:none;position:fixed;inset:0;z-index:1001;background:white;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--blue);color:white;flex-shrink:0;">
+            <span id="jitsiReunionTitulo" style="font-weight:600;font-size:0.95rem;">Reunión</span>
+            <button id="btnSalirReunion" style="background:var(--red);color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.85rem;">✕ Salir</button>
         </div>
-        <iframe id="jitsiIframe" style="width:100%;height:calc(100vh - 48px);border:none;" allow="camera;microphone;fullscreen;display-capture" src=""></iframe>
+        <iframe id="jitsiIframe" style="width:100%;flex:1;border:none;min-height:0;" allow="camera;microphone;fullscreen;display-capture" src=""></iframe>
     </div>
 
     <!-- Modal ver acta completa -->
@@ -515,6 +551,10 @@
           <div class="form-group">
             <label for="editTelefono">Teléfono</label>
             <input type="tel" id="editTelefono" required>
+          </div>
+          <div class="form-group">
+            <label for="editEmail">Correo electrónico</label>
+            <input type="email" id="editEmail">
           </div>
           <div class="form-group">
             <label for="editDireccion">Dirección</label>
@@ -614,8 +654,8 @@
       </div>
     </div>
 
-    <script src="js/notificaciones.js"></script>
-    <script src="js/db.js"></script>
+    <script src="js/notificaciones.js?v=2"></script>
+    <script src="js/db.js?v=2"></script>
     <script>
         // ===== SESSION =====
             var sessionRole = '';
@@ -679,6 +719,13 @@
             } else {
                 document.getElementById('tabBtnTesorería').style.display = 'none';
                 document.getElementById('tabBtnInscripcion').classList.add('active');
+            }
+
+            // Ocultar tabs del dropdown móvil según rol
+            if (sessionRole === 'Tesorero') {
+                document.querySelectorAll('.dropdown-tab-item[data-tab="tab-inscripcion"], .dropdown-tab-item[data-tab="tab-consultar"], .dropdown-tab-item[data-tab="tab-certificados"], .dropdown-tab-item[data-tab="tab-actas"]').forEach(function (el) { el.style.display = 'none'; });
+            } else {
+                document.querySelector('.dropdown-tab-item[data-tab="tab-tesoreria"]').style.display = 'none';
             }
         })();
 
@@ -785,22 +832,6 @@
         document.getElementById('btnSoporte').addEventListener('click', function () {
             document.getElementById('userDropdown').classList.remove('show');
             document.getElementById('modalSoporte').style.display = 'flex';
-        });
-        document.getElementById('btnTestEmail').addEventListener('click', async function () {
-            document.getElementById('userDropdown').classList.remove('show');
-            var email = prompt('Correo de prueba (ej: tu@correo.com):');
-            if (!email || !email.trim()) { alert('Correo inválido'); return; }
-            email = email.trim();
-            var r = await enviarNotificacionCorreo(
-                { email: email, nombre: 'Test JAC' },
-                'Prueba desde JAC',
-                'Este es un correo de prueba. Si recibís esto, EmailJS funciona correctamente.'
-            );
-            if (r.ok) {
-                alert('✅ Correo enviado correctamente a ' + email);
-            } else {
-                alert('❌ Error: ' + r.error + '\n\nAbrí la consola (F12) para más detalles.');
-            }
         });
 
 
@@ -921,6 +952,36 @@
             });
         });
 
+        // Menú móvil: cambiar tabs desde el dropdown
+        document.querySelectorAll('.dropdown-tab-item').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('userDropdown').classList.remove('show');
+                var target = this.getAttribute('data-tab');
+                tabItems.forEach(function (b) { b.classList.remove('active'); });
+                document.querySelector('.tab-item[data-tab="' + target + '"]').classList.add('active');
+                Object.keys(pages).forEach(function (k) {
+                    pages[k].classList.toggle('active', k === target);
+                });
+                document.getElementById('pageTitle').textContent = titles[target];
+                if (target === 'tab-consultar') {
+                    document.getElementById('buscarCedula').value = '';
+                    renderTable().catch(function () {});
+                }
+                if (target === 'tab-certificados') {
+                    renderActasList().catch(function () {});
+                }
+                if (target === 'tab-actas') {
+                    document.getElementById('actaNumero').value = '';
+                }
+                if (target === 'tab-tesoreria') {
+                    renderTablaTeso();
+                }
+                if (target === 'tab-reuniones') {
+                    renderReuniones();
+                }
+            });
+        });
+
         // ===== CRUD: Supabase =====
         async function renderTable(filtroCedula) {
             const all = await getRegistros();
@@ -961,7 +1022,7 @@
             tbody.innerHTML = list.map(function (r, i) {
                 var botones = '';
                 if (puedeEditar) {
-                    botones += '<button class="btn-editar-reg" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-telefono="' + (r.telefono || '') + '" data-direccion="' + (r.direccion || '').replace(/"/g, '&quot;') + '" data-observacion="' + (r.observacion || '').replace(/"/g, '&quot;') + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;white-space:nowrap;margin-right:4px;">✏️</button>';
+                    botones += '<button class="btn-editar-reg" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-telefono="' + (r.telefono || '') + '" data-direccion="' + (r.direccion || '').replace(/"/g, '&quot;') + '" data-observacion="' + (r.observacion || '').replace(/"/g, '&quot;') + '" data-email="' + (r.email || '').replace(/"/g, '&quot;') + '" style="padding:4px 8px;font-size:0.75rem;border:none;border-radius:6px;background:#dbeafe;color:#2563eb;cursor:pointer;white-space:nowrap;margin-right:4px;">✏️</button>';
                     botones += '<button class="btn-solicitar-elim" data-id="' + r.id + '" data-nombres="' + r.nombres.replace(/"/g, '&quot;') + '" data-apellidos="' + r.apellidos.replace(/"/g, '&quot;') + '" data-cedula="' + r.cedula + '" data-barrio="' + r.barrio + '" style="padding:4px 10px;font-size:0.75rem;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer;white-space:nowrap;">🗑 Solicitar</button>';
                 }
                 return '<tr>' +
@@ -970,6 +1031,7 @@
                     '<td>' + r.apellidos + '</td>' +
                     '<td>' + r.cedula + '</td>' +
                     '<td>' + (r.telefono || '') + '</td>' +
+                    '<td>' + (r.email || '') + '</td>' +
                     '<td>' + (r.direccion || '') + '</td>' +
                     '<td>' + (r.ciudad || '') + '</td>' +
                     '<td>' + r.barrio + '</td>' +
@@ -980,15 +1042,16 @@
             // Delegación de eventos para botones de edición
             tbody.querySelectorAll('.btn-editar-reg').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    abrirEdicionRegistro({
-                        id: this.dataset.id,
-                        nombres: this.dataset.nombres,
-                        apellidos: this.dataset.apellidos,
-                        cedula: this.dataset.cedula,
-                        telefono: this.dataset.telefono,
-                        direccion: this.dataset.direccion,
-                        observacion: this.dataset.observacion,
-                    });
+            abrirEdicionRegistro({
+                id: this.dataset.id,
+                nombres: this.dataset.nombres,
+                apellidos: this.dataset.apellidos,
+                cedula: this.dataset.cedula,
+                telefono: this.dataset.telefono,
+                direccion: this.dataset.direccion,
+                observacion: this.dataset.observacion,
+                email: this.dataset.email || '',
+            });
                 });
             });
             // Delegación de eventos para botones de solicitud
@@ -1037,6 +1100,7 @@
                 direccion: document.getElementById('direccion').value.trim(),
                 ciudad: sessionCiudad,
                 barrio: sessionBarrio,
+                email: document.getElementById('inscEmail').value.trim(),
                 observacion: document.getElementById('observacion').value.trim(),
                 cambio_requerido: false,
             };
@@ -1547,6 +1611,7 @@
             document.getElementById('editNombres').value = data.nombres;
             document.getElementById('editApellidos').value = data.apellidos;
             document.getElementById('editTelefono').value = data.telefono;
+            document.getElementById('editEmail').value = data.email || '';
             document.getElementById('editDireccion').value = data.direccion;
             document.getElementById('editObservacion').value = data.observacion;
             document.getElementById('editMsg').className = 'msg';
@@ -1565,6 +1630,7 @@
                 nombres: document.getElementById('editNombres').value.trim(),
                 apellidos: document.getElementById('editApellidos').value.trim(),
                 telefono: document.getElementById('editTelefono').value.trim(),
+                email: document.getElementById('editEmail').value.trim(),
                 direccion: document.getElementById('editDireccion').value.trim(),
                 observacion: document.getElementById('editObservacion').value.trim(),
             };
@@ -2118,7 +2184,8 @@
                         '<span class="acta-card-num">' + r.titulo + '</span>' +
                         '<span class="acta-card-meta">' + r.estado + '</span>' +
                         '</div>' +
-                        '<div class="acta-card-detail">' + r.fecha + ' · ' + r.hora_inicio + ' · ' + r.duracion_minutos + 'min</div>' +
+                        '<div class="acta-card-detail">' + r.fecha + ' · ' + r.hora_inicio + ' · ' + r.duracion_minutos + 'min' +
+                        ' · <span style="color:#059669;font-weight:600;">✅ ' + (invitaciones || []).filter(function (i) { return i.reunion_id == r.id && i.estado === 'confirmada'; }).length + ' aceptaron</span></div>' +
                         '<div class="acta-card-footer" style="flex-wrap:wrap;gap:6px;justify-content:flex-start;">';
 
                     // Botón unirse (solo si la reunión no terminó)
@@ -2135,7 +2202,9 @@
                         puedeUnirse = false;
                     } else {
                         var miInvitacion = (invitaciones || []).find(function (i) { return i.reunion_id == r.id && i.invitado_username === sessionUsername; });
-                        var miExterno = (externos || []).find(function (e) { return e.reunion_id == r.id && e.cedula === (sessionCedula || ''); });
+                        var miExterno = (externos || []).find(function (e) {
+                            return e.reunion_id == r.id && (e.cedula === (sessionCedula || '') || e.cedula === (sessionUsername || ''));
+                        });
 
                         if (esCreador) {
                             puedeUnirse = true;
@@ -2143,7 +2212,7 @@
                             puedeUnirse = true;
                         } else if (miExterno && miExterno.estado === 'aprobado') {
                             puedeUnirse = true;
-                        } else if (sessionRole && sessionRole !== '') {
+                        } else if (sessionRole && sessionRole !== '' && !miInvitacion) {
                             puedeUnirse = true;
                         }
                     }
@@ -2160,10 +2229,24 @@
                         }
                     }
 
-                    // Botón confirmar/rechazar para invitados
-                    if (!esCreador && miInvitacion && miInvitacion.estado === 'pendiente') {
-                        html += '<button class="acta-card-btn" onclick="confirmarInvitacion(' + miInvitacion.id + ',' + r.id + ')">✅ Confirmar asistencia</button>';
-                        html += '<button class="acta-card-btn" style="background:#fee2e2;color:#dc2626;" onclick="rechazarInvitacion(' + miInvitacion.id + ')">❌ Rechazar</button>';
+                    // Botón aceptar/rechazar y solicitar unirse para invitados
+                    if (!esCreador && miInvitacion) {
+                        if (miInvitacion.estado === 'pendiente') {
+                            html += '<button class="acta-card-btn" onclick="confirmarInvitacion(' + miInvitacion.id + ',' + r.id + ')">✅ Aceptar</button>';
+                            html += '<button class="acta-card-btn" style="background:#fee2e2;color:#dc2626;" onclick="rechazarInvitacion(' + miInvitacion.id + ')">❌ Rechazar</button>';
+                        } else if (miInvitacion.estado === 'rechazada') {
+                            // Verificar si ya pidió reingreso como externo
+                            var miSolReingreso = (externos || []).find(function (e) {
+                                return e.reunion_id == r.id && (e.cedula === (sessionCedula || '') || e.cedula === (sessionUsername || ''));
+                            });
+                            if (miSolReingreso && miSolReingreso.estado === 'pendiente') {
+                                html += '<span style="font-size:0.78rem;color:#92400e;background:#fef3c7;padding:6px 12px;border-radius:8px;">⏳ Solicitud enviada, esperando aprobación...</span>';
+                            } else if (miSolReingreso && miSolReingreso.estado === 'aprobado') {
+                                // Ya aprobado, mostrar unirse
+                            } else {
+                                html += '<button class="acta-card-btn" style="background:#fef3c7;color:#92400e;" onclick="solicitarReingreso(' + r.id + ')">🔁 Solicitar unirse</button>';
+                            }
+                        }
                     }
 
                     // Botón ver asistencia (solo creador, después de la reunión)
@@ -2205,6 +2288,32 @@
         }
 
         // Crear reunión
+        // Validar campos para habilitar botón Crear Reunión
+        function validarFormReunion() {
+            var falta = [];
+            if (!document.getElementById('reuTitulo').value.trim()) falta.push('Título');
+            if (!document.getElementById('reuFecha').value) falta.push('Fecha');
+            if (!document.getElementById('reuHora').value) falta.push('Hora');
+            var n = document.querySelectorAll('.reu-invitar-chk:checked').length;
+            if (n < 2) falta.push('al menos 2 invitados (tienes ' + n + ')');
+            var ok = falta.length === 0;
+            document.getElementById('btnCrearReunion').disabled = !ok;
+            var hint = document.getElementById('reuHint');
+            if (!ok) {
+                hint.textContent = '❓ Falta: ' + falta.join(', ');
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+        }
+        document.getElementById('reuTitulo').addEventListener('input', validarFormReunion);
+        document.getElementById('reuFecha').addEventListener('change', validarFormReunion);
+        document.getElementById('reuHora').addEventListener('change', validarFormReunion);
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('reu-invitar-chk')) validarFormReunion();
+        });
+        validarFormReunion();
+
         document.getElementById('formReunion').addEventListener('submit', async function (e) {
             e.preventDefault();
             if (!puedeCrearReuniones()) return;
@@ -2287,41 +2396,65 @@
             msg.textContent = '✅ Reunión creada exitosamente';
             msg.className = 'msg success';
             msg.style.display = 'block';
+
+            // Guardar valores del formulario ANTES de resetear
+            var invitados = [];
+            var totalChecks = document.querySelectorAll('.reu-invitar-chk').length;
+            var checkedChecks = document.querySelectorAll('.reu-invitar-chk:checked').length;
+            console.log('INVITACIONES: total checkboxes:', totalChecks, 'checked:', checkedChecks);
+            document.querySelectorAll('.reu-invitar-chk:checked').forEach(function (chk) {
+                invitados.push({ username: chk.value, nombre: chk.dataset.nombre });
+            });
+            var reuTituloVal = document.getElementById('reuTitulo').value;
+            var reuFechaVal = document.getElementById('reuFecha').value;
+            var reuHoraVal = document.getElementById('reuHora').value;
+
             this.reset();
 
             // Enviar notificaciones por correo a los invitados
             try {
-                var checks = document.querySelectorAll('.reu-invitar-chk:checked');
-                var invitados = [];
-                checks.forEach(function (chk) {
-                    invitados.push({ username: chk.value, nombre: chk.dataset.nombre });
-                });
-                // Obtener emails de los usuarios invitados
+                // Obtener emails de los invitados (usuarios + registros)
                 var todosUsu = await getUsuarios();
+                var todosReg = await getRegistros();
+                console.log('INVITACIONES: invitados seleccionados:', invitados);
+                console.log('INVITACIONES: usuarios:', todosUsu);
+                console.log('INVITACIONES: registros:', todosReg);
                 var invitadosConEmail = [];
+                var invitadosConTelefono = [];
                 invitados.forEach(function (inv) {
                     var u = (todosUsu || []).find(function (usr) { return usr.username === inv.username; });
-                    var email = u && u.email ? u.email : '';
+                    var r = (todosReg || []).find(function (reg) { return reg.cedula === inv.username; });
+                    var email = (u && u.email) || (r && r.email) || '';
+                    var telefono = (u && u.telefono) || (r && r.telefono) || '';
+                    console.log('INVITACIONES: buscando', inv.username, '-> usuario:', u, 'registro:', r, 'email:', email, 'telefono:', telefono);
                     if (email) {
                         invitadosConEmail.push({ email: email, nombre: inv.nombre, username: inv.username });
                     }
+                    if (telefono) {
+                        invitadosConTelefono.push({ telefono: telefono, nombre: inv.nombre, username: inv.username });
+                    }
                 });
+                console.log('INVITACIONES: con email:', invitadosConEmail);
+                console.log('INVITACIONES: con telefono:', invitadosConTelefono);
 
-                if (invitadosConEmail.length > 0) {
+                var envCorreo = document.getElementById('reuNotifEmail').checked;
+                var envWsp = document.getElementById('reuNotifWhatsApp').checked;
+                var partes = [];
+                if (envCorreo && invitadosConEmail.length > 0) {
                     msg.textContent += ' Enviando ' + invitadosConEmail.length + ' notificación(es)...';
                     var res = await enviarInvitacionesReunion(
                         reuId ? reuId.id : null,
-                        document.getElementById('reuTitulo').value,
-                        document.getElementById('reuFecha').value,
-                        document.getElementById('reuHora').value,
+                        reuTituloVal,
+                        reuFechaVal,
+                        reuHoraVal,
                         sessionBarrio,
                         invitadosConEmail
                     );
                     var enviados = res.filter(function (r) { return r.ok; }).length;
                     var fallidos = res.filter(function (r) { return !r.ok; }).length;
-                    msg.textContent = '✅ Reunión creada. ' + enviados + ' notificación' + (enviados !== 1 ? 'es' : '') + ' enviada' + (enviados !== 1 ? 's' : '') + '.';
+                    partes.push(enviados + ' notificación' + (enviados !== 1 ? 'es' : '') + ' enviada' + (enviados !== 1 ? 's' : ''));
                     if (fallidos > 0) {
-                        msg.textContent += ' ' + fallidos + ' fallida' + (fallidos !== 1 ? 's' : '') + '.';
+                        partes.push(fallidos + ' fallida' + (fallidos !== 1 ? 's' : ''));
                         console.warn('Notificaciones fallidas:', res.filter(function (r) { return !r.ok; }));
                     }
                     // Guardar log en notificaciones (no crítico si falla)
@@ -2329,22 +2462,55 @@
                         guardarNotificacion({
                             destinatario_email: inv.email,
                             destinatario_nombre: inv.nombre,
-                            asunto: 'Invitación a reunión - ' + document.getElementById('reuTitulo').value,
+                            asunto: 'Invitación a reunión - ' + reuTituloVal,
                             tipo: 'invitacion',
                             reunion_id: reuId ? reuId.id : null,
                             enviado: true,
                         }).catch(function (e) { console.warn('Error guardando notificación:', e); });
                     });
-                } else {
-                    msg.textContent = '✅ Reunión creada. No se encontraron invitados con correo registrado.';
+                } else if (envCorreo) {
+                    partes.push('sin invitados con correo');
+                }
+
+                if (envWsp && invitadosConTelefono.length > 0) {
+                    partes.push(invitadosConTelefono.length + ' con WhatsApp');
+                }
+
+                msg.textContent = '✅ Reunión creada. ' + partes.join(', ') + '.';
+                if (partes.length === 0) msg.textContent = '✅ Reunión creada.';
+
+                // Agregar botón de WhatsApp si hay teléfonos y está marcado
+                if (envWsp && invitadosConTelefono.length > 0) {
+                    var waBtn = document.createElement('button');
+                    waBtn.className = 'btn-primary';
+                    waBtn.style.cssText = 'margin-top:10px;background:#25D366;width:100%;';
+                    waBtn.innerHTML = '📱 Enviar WhatsApp a ' + invitadosConTelefono.length + ' invitado' + (invitadosConTelefono.length !== 1 ? 's' : '');
+                    waBtn.onclick = function () {
+                        var texto = encodeURIComponent(
+                            '📅 INVITACIÓN A REUNIÓN JAC\n\n' +
+                            'Título: ' + reuTituloVal + '\n' +
+                            'Fecha: ' + reuFechaVal + '\n' +
+                            'Hora: ' + reuHoraVal + '\n' +
+                            'Lugar: ' + sessionBarrio + '\n\n' +
+                            'Ingresá a la plataforma JAC para confirmar tu asistencia.'
+                        );
+                        invitadosConTelefono.forEach(function (inv, i) {
+                            var tel = inv.telefono.replace(/[^0-9]/g, '');
+                            if (tel.startsWith('57')) tel = tel.substring(2);
+                            setTimeout(function () {
+                                window.open('https://wa.me/57' + tel + '?text=' + texto, '_blank');
+                            }, i * 1500);
+                        });
+                    };
+                    msg.parentNode.appendChild(waBtn);
                 }
             } catch (e) {
                 console.warn('Error enviando notificaciones:', e);
             }
 
+            await renderReuniones();
             btn.disabled = false;
             btn.textContent = '📅 Crear Reunión';
-            renderReuniones().catch(function () {});
         });
 
         // Confirmar/rechazar invitación
@@ -2354,6 +2520,17 @@
         }
         async function rechazarInvitacion(invId) {
             await updateInvitacion(invId, { estado: 'rechazada' });
+            renderReuniones().catch(function () {});
+        }
+        async function solicitarReingreso(reuId) {
+            var cedula = sessionCedula || sessionUsername || '';
+            if (!cedula) { alert('No se pudo identificar tu cédula'); return; }
+            await saveInvitadoExterno({
+                reunion_id: reuId,
+                cedula: cedula,
+                nombre: sessionName || '',
+                estado: 'pendiente',
+            });
             renderReuniones().catch(function () {});
         }
 
@@ -2415,6 +2592,7 @@
         function actualizarContadorSeleccionados() {
             var n = document.querySelectorAll('.reu-invitar-chk:checked').length;
             document.getElementById('reuSeleccionadosCount').textContent = n + ' seleccionado' + (n !== 1 ? 's' : '');
+            if (typeof validarFormReunion === 'function') validarFormReunion();
         }
 
         document.getElementById('reuFiltrarMiembros').addEventListener('input', function () {
@@ -2424,16 +2602,19 @@
         document.getElementById('btnSeleccionarTodos').addEventListener('click', function () {
             document.querySelectorAll('.reu-invitar-chk:not(:checked)').forEach(function (c) { c.checked = true; });
             actualizarContadorSeleccionados();
+            validarFormReunion();
         });
 
         document.getElementById('btnDeseleccionarTodos').addEventListener('click', function () {
             document.querySelectorAll('.reu-invitar-chk:checked').forEach(function (c) { c.checked = false; });
             actualizarContadorSeleccionados();
+            validarFormReunion();
         });
 
         // Actualizar contador al hacer clic en checkboxes (delegación)
         document.addEventListener('change', function (e) {
             if (e.target.classList.contains('reu-invitar-chk')) {
+                console.log('INVITACIONES: checkbox cambiado', e.target.value, 'checked:', e.target.checked);
                 actualizarContadorSeleccionados();
             }
         });
@@ -2449,6 +2630,11 @@
         }
 
         // Unirse a reunión (Jitsi - abre nueva ventana)
+        document.getElementById('btnSalirReunion').addEventListener('click', function () {
+            document.getElementById('jitsiIframe').src = '';
+            document.getElementById('modalJitsi').style.display = 'none';
+        });
+
         async function unirseReunion(reuId) {
             try {
                 var reuniones = await getReuniones();
@@ -2469,9 +2655,11 @@
                     hora_ingreso: new Date().toISOString(),
                 });
 
-                // Abrir Jitsi en nueva ventana
-                var url = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false';
-                window.open(url, '_blank');
+                // Abrir Jitsi en el modal interno con nombre del usuario
+                var nombre = encodeURIComponent(sessionName || 'Invitado');
+                document.getElementById('jitsiReunionTitulo').textContent = r.titulo;
+                document.getElementById('jitsiIframe').src = 'https://meet.jit.si/' + encodeURIComponent(r.sala_nombre) + '#config.startWithAudioMuted=false&config.disableDeepLinking=true&interfaceConfig.TOOLBAR_ALWAYS_VISIBLE=true&userInfo.displayName=' + nombre + '&config.prejoinConfig.enabled=false';
+                document.getElementById('modalJitsi').style.display = 'flex';
             } catch (e) {
                 alert('Error al unirse: ' + e.message);
             }
@@ -2554,6 +2742,7 @@
         // ===== INIT =====
         renderTable().catch(function () {});
         renderActasList().catch(function (e) { console.error('Error al cargar actas:', e); });
+        renderReuniones().catch(function () {});
 
         // Service Worker
         if ('serviceWorker' in navigator) {

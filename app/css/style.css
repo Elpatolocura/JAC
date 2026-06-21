@@ -152,6 +152,18 @@ body {
     margin-bottom: 30px;
 }
 
+.page-header {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--navy);
+    padding: 8px 0 16px 0;
+    border-bottom: 3px solid var(--navy);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -425,10 +437,16 @@ body {
     z-index: 100;
     padding: 4px 8px;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 2px;
 }
+.tab-bar::-webkit-scrollbar { display: none; }
 
 .tab-item {
     flex: 1;
+    min-width: 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -784,4 +802,37 @@ table tr:hover td {
     .form-row { grid-template-columns: 1fr; }
     .content { padding: 16px; }
     .stat-bar { flex-direction: column; }
+}
+
+/* Ocultar navbar en móvil, mostrar tabs en dropdown */
+@media (max-width: 768px) {
+    .tab-bar {
+        display: none;
+    }
+    .content {
+        padding-bottom: 24px;
+    }
+    .dropdown-tabs-mobile {
+        display: block;
+    }
+}
+@media (min-width: 769px) {
+    .dropdown-tabs-mobile {
+        display: none;
+    }
+}
+.dropdown-tabs-mobile button {
+    display: block;
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+}
+.dropdown-tabs-mobile button:hover {
+    background: var(--bg);
 }

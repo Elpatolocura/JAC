@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   email TEXT DEFAULT '',
+  telefono TEXT DEFAULT '',
   cedula TEXT DEFAULT '',
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('Presidente', 'Secretario', 'Tesorero')),
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS registros (
   apellidos TEXT NOT NULL,
   cedula TEXT NOT NULL,
   telefono TEXT NOT NULL,
+  email TEXT DEFAULT '',
   direccion TEXT NOT NULL,
   ciudad TEXT DEFAULT '',
   barrio TEXT NOT NULL,
@@ -47,6 +49,8 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT T
 
 -- Migraciones para tablas existentes
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT DEFAULT '';
+ALTER TABLE registros ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_role_check;
 ALTER TABLE usuarios ADD CONSTRAINT usuarios_role_check CHECK (role IN ('Presidente', 'Secretario', 'Tesorero', 'Vocal', 'Fiscal', 'Comité'));
 ALTER TABLE actas ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
@@ -103,7 +107,7 @@ ALTER TABLE codigos_registro ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS anon_select_codigos ON codigos_registro;
 CREATE POLICY anon_select_codigos ON codigos_registro FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_codigos ON codigos_registro;
-CREATE POLICY anon_update_codigos ON codigos_registro FOR UPDATE USING (true);
+CREATE POLICY anon_update_codigos ON codigos_registro FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ============================================
 -- Tabla de solicitudes de eliminación (Ley 1581/2012)
@@ -210,7 +214,7 @@ CREATE POLICY anon_insert_reuniones ON reuniones FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS anon_select_reuniones ON reuniones;
 CREATE POLICY anon_select_reuniones ON reuniones FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_reuniones ON reuniones;
-CREATE POLICY anon_update_reuniones ON reuniones FOR UPDATE USING (true);
+CREATE POLICY anon_update_reuniones ON reuniones FOR UPDATE USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS anon_delete_reuniones ON reuniones;
 CREATE POLICY anon_delete_reuniones ON reuniones FOR DELETE USING (true);
 
@@ -232,7 +236,7 @@ CREATE POLICY anon_insert_invitaciones ON invitaciones_reunion FOR INSERT WITH C
 DROP POLICY IF EXISTS anon_select_invitaciones ON invitaciones_reunion;
 CREATE POLICY anon_select_invitaciones ON invitaciones_reunion FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_invitaciones ON invitaciones_reunion;
-CREATE POLICY anon_update_invitaciones ON invitaciones_reunion FOR UPDATE USING (true);
+CREATE POLICY anon_update_invitaciones ON invitaciones_reunion FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ============================================
 -- Tabla de invitados externos por cédula
@@ -252,7 +256,7 @@ CREATE POLICY anon_insert_externos ON invitados_externos FOR INSERT WITH CHECK (
 DROP POLICY IF EXISTS anon_select_externos ON invitados_externos;
 CREATE POLICY anon_select_externos ON invitados_externos FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_externos ON invitados_externos;
-CREATE POLICY anon_update_externos ON invitados_externos FOR UPDATE USING (true);
+CREATE POLICY anon_update_externos ON invitados_externos FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ============================================
 -- Tabla de asistencia a reuniones (auditoría)
@@ -274,7 +278,7 @@ CREATE POLICY anon_insert_asistencia ON asistencia_reuniones FOR INSERT WITH CHE
 DROP POLICY IF EXISTS anon_select_asistencia ON asistencia_reuniones;
 CREATE POLICY anon_select_asistencia ON asistencia_reuniones FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_asistencia ON asistencia_reuniones;
-CREATE POLICY anon_update_asistencia ON asistencia_reuniones FOR UPDATE USING (true);
+CREATE POLICY anon_update_asistencia ON asistencia_reuniones FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ===== NOTIFICACIONES =====
 CREATE TABLE IF NOT EXISTS notificaciones (
