@@ -1,39 +1,33 @@
-async function loginUser(username, password) {
+async function loginUser(email) {
   try {
-    // Buscar por username en usuarios
     let data = await apiFetch(
-      'usuarios?username=eq.' + encodeURIComponent(username) + '&select=*'
+      'usuarios?email=eq.' + encodeURIComponent(email) + '&select=*'
     );
     if (data && data.length > 0) {
       const u = data[0];
-      const storedPass = u.password || '';
-
-      if (password === storedPass) {
-        return {
-          ok: true,
-          user: { username: u.username, name: u.name, role: u.role, ciudad: u.ciudad || '', barrio: u.barrio, cedula: u.cedula || '' },
-          mustChangePassword: false,
-        };
-      }
-
-      return { ok: false, error: 'Usuario o contraseña incorrectos' };
+      return {
+        ok: true,
+        user: {
+          username: u.username,
+          name: u.name,
+          role: u.role,
+          ciudad: u.ciudad || '',
+          barrio: u.barrio,
+          cedula: u.cedula || '',
+          email: u.email || '',
+          telefono: u.telefono || '',
+        },
+      };
     }
 
-    // Si no, buscar por cédula en registros (afiliados)
     data = await apiFetch(
-      'registros?cedula=eq.' + encodeURIComponent(username) + '&select=*'
+      'registros?email=eq.' + encodeURIComponent(email) + '&select=*'
     );
     if (!data || data.length === 0) {
-      return { ok: false, error: 'Usuario o contraseña incorrectos' };
+      return { ok: false, error: 'No se encontró perfil de usuario con ese correo' };
     }
 
     const r = data[0];
-    const storedPassword = r.password || r.cedula;
-
-    if (password !== storedPassword && password !== r.cedula) {
-      return { ok: false, error: 'Usuario o contraseña incorrectos' };
-    }
-
     return {
       ok: true,
       user: {
@@ -44,8 +38,9 @@ async function loginUser(username, password) {
         barrio: r.barrio,
         registroId: r.id,
         cedula: r.cedula,
+        email: r.email || '',
+        telefono: r.telefono || '',
       },
-      mustChangePassword: false,
     };
   } catch (err) {
     return { ok: false, error: 'Error de conexión: ' + err.message };
@@ -229,14 +224,44 @@ async function updateRegistro(id, campos) {
   }
 }
 
-async function checkCedulaDuplicada(cedula) {
+async function checkCedulaDuplicada(cedula, excludeId) {
   try {
-    const data = await apiFetch(
-      'registros?cedula=eq.' + encodeURIComponent(cedula) + '&select=ciudad,barrio'
-    );
-    return data && data.length > 0 ? data[0] : null;
+    let query = 'registros?cedula=eq.' + encodeURIComponent(cedula) + '&select=id,ciudad,barrio';
+    const data = await apiFetch(query);
+    let found = data && data.length > 0 ? data[0] : null;
+    if (found && excludeId && found.id == excludeId) found = null;
+
+    if (!found) {
+      const data2 = await apiFetch('usuarios?cedula=eq.' + encodeURIComponent(cedula) + '&select=id,ciudad,barrio');
+      if (data2 && data2.length > 0) found = data2[0];
+    }
+    return found;
   } catch {
     return null;
+  }
+}
+
+async function checkEmailDuplicada(email, excludeTable, excludeId) {
+  try {
+    let data = await apiFetch('usuarios?email=eq.' + encodeURIComponent(email) + '&select=id');
+    if (data && data.length > 0 && !(excludeTable === 'usuarios' && excludeId && data[0].id == excludeId)) return true;
+    data = await apiFetch('registros?email=eq.' + encodeURIComponent(email) + '&select=id');
+    if (data && data.length > 0 && !(excludeTable === 'registros' && excludeId && data[0].id == excludeId)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+async function checkTelefonoDuplicada(telefono, excludeTable, excludeId) {
+  try {
+    let data = await apiFetch('usuarios?telefono=eq.' + encodeURIComponent(telefono) + '&select=id');
+    if (data && data.length > 0 && !(excludeTable === 'usuarios' && excludeId && data[0].id == excludeId)) return true;
+    data = await apiFetch('registros?telefono=eq.' + encodeURIComponent(telefono) + '&select=id');
+    if (data && data.length > 0 && !(excludeTable === 'registros' && excludeId && data[0].id == excludeId)) return true;
+    return false;
+  } catch {
+    return false;
   }
 }
 

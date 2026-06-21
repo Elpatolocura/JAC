@@ -50,7 +50,11 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cambio_requerido BOOLEAN DEFAULT T
 -- Migraciones para tablas existentes
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT DEFAULT '';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_usuarios_user_id ON usuarios (user_id);
 ALTER TABLE registros ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
+ALTER TABLE registros ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_registros_user_id ON registros (user_id);
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_role_check;
 ALTER TABLE usuarios ADD CONSTRAINT usuarios_role_check CHECK (role IN ('Presidente', 'Secretario', 'Tesorero', 'Vocal', 'Fiscal', 'Comité'));
 ALTER TABLE actas ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';

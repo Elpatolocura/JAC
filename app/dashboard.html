@@ -639,6 +639,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
     <script src="js/supabase.js"></script>
     <!-- Modal crear acta desde tesorería -->
     <div id="modalActaTeso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
@@ -665,25 +667,67 @@
             var sessionRegistroId = '';
             var sessionName = '';
             var sessionCedula = '';
+            var sessionEmail = '';
+            var sessionTelefono = '';
             var isReadOnly = false;
-        (function () {
-            const sessionData = localStorage.getItem('jac_session');
-            if (!sessionData || !sessionData.includes('barrio')) {
+        (async function () {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
                 localStorage.removeItem('jac_session');
                 window.location.href = 'index.html';
                 return;
             }
-            const session = JSON.parse(sessionData);
+
+            const userEmail = session.user.email;
+
+            // Fetch profile from usuarios first
+            let perfil = null;
+            try {
+                const data = await apiFetch('usuarios?email=eq.' + encodeURIComponent(userEmail) + '&select=*');
+                if (data && data.length > 0) {
+                    perfil = data[0];
+                }
+            } catch (e) { /* ignore */ }
+
+            if (!perfil) {
+                try {
+                    const data = await apiFetch('registros?email=eq.' + encodeURIComponent(userEmail) + '&select=*');
+                    if (data && data.length > 0) {
+                        perfil = data[0];
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            if (!perfil) {
+                localStorage.removeItem('jac_session');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            var session = {
+                username: perfil.username || perfil.cedula || '',
+                name: perfil.name || (perfil.nombres + ' ' + perfil.apellidos) || '',
+                role: perfil.role || 'Afiliado',
+                ciudad: perfil.ciudad || '',
+                barrio: perfil.barrio || '',
+                cedula: perfil.cedula || perfil.username || '',
+                registroId: perfil.id || '',
+                email: perfil.email || '',
+                telefono: perfil.telefono || '',
+            };
+
+            localStorage.setItem('jac_session', JSON.stringify(session));
+
             document.getElementById('userName').textContent = session.name;
             sessionRole = session.role;
-            sessionCiudad = session.ciudad || session.barrio || '';
+            sessionCiudad = session.ciudad;
             sessionBarrio = session.barrio;
-            sessionUsername = session.username || '';
-            sessionRegistroId = session.registroId || '';
-            sessionName = session.name || '';
-            sessionCedula = session.cedula || session.username || '';
-
-
+            sessionUsername = session.username;
+            sessionRegistroId = session.registroId;
+            sessionName = session.name;
+            sessionCedula = session.cedula;
+            sessionEmail = session.email;
+            sessionTelefono = session.telefono;
 
             isReadOnly = sessionRole === 'Presidente';
 
@@ -779,6 +823,16 @@
             }
         });
 
+        // ===== RECUPERAR CONTRASEÑA (desde email) =====
+        supabase.auth.onAuthStateChange(function (event, session) {
+            if (event === 'PASSWORD_RECOVERY') {
+                document.getElementById('modalPassword').style.display = 'flex';
+                document.getElementById('modalMsg').textContent = 'Ingresá tu nueva contraseña';
+                document.getElementById('modalMsg').className = 'msg';
+                document.getElementById('modalMsg').style.display = 'block';
+            }
+        });
+
         // ===== SOPORTE =====
         document.getElementById('formSoporte').addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -836,7 +890,8 @@
 
 
         // ===== LOGOUT =====
-        document.getElementById('logoutBtn').addEventListener('click', function () {
+        document.getElementById('logoutBtn').addEventListener('click', async function () {
+            await supabase.auth.signOut();
             localStorage.removeItem('jac_session');
             window.location.href = 'index.html';
         });
@@ -874,22 +929,14 @@
                 msg.style.display = 'block';
                 return;
             }
-            if (newPass === sessionUsername) {
-                msg.textContent = 'La nueva contraseña no puede ser igual a tu cédula';
-                msg.className = 'msg error';
-                msg.style.display = 'block';
-                return;
-            }
 
             const btn = this.querySelector('button');
             btn.disabled = true;
             btn.textContent = 'Guardando...';
 
-            const isUsuario = !sessionRegistroId;
-            const identifier = isUsuario ? sessionUsername : sessionUsername;
-            const result = await changePassword(identifier, newPass, isUsuario);
+            const { error } = await supabase.auth.updateUser({ password: newPass });
 
-            if (result.ok) {
+            if (!error) {
                 msg.textContent = '✅ Contraseña cambiada exitosamente';
                 msg.className = 'msg success';
                 msg.style.display = 'block';
@@ -897,7 +944,7 @@
                     document.getElementById('modalPassword').style.display = 'none';
                 }, 1500);
             } else {
-                msg.textContent = 'Error: ' + result.error;
+                msg.textContent = 'Error: ' + error.message;
                 msg.className = 'msg error';
                 msg.style.display = 'block';
                 btn.disabled = false;
@@ -1120,6 +1167,28 @@
                 msg.className = 'msg error';
                 msg.style.display = 'block';
                 return;
+            }
+
+            // Validar email único
+            if (campos.email) {
+                const emailDupe = await checkEmailDuplicada(campos.email);
+                if (emailDupe) {
+                    msg.textContent = 'Ese correo electrónico ya está registrado en el sistema';
+                    msg.className = 'msg error';
+                    msg.style.display = 'block';
+                    return;
+                }
+            }
+
+            // Validar teléfono único
+            if (campos.telefono) {
+                const telDupe = await checkTelefonoDuplicada(campos.telefono);
+                if (telDupe) {
+                    msg.textContent = 'Ese número de teléfono ya está registrado en el sistema';
+                    msg.className = 'msg error';
+                    msg.style.display = 'block';
+                    return;
+                }
             }
 
             const hoy = new Date();
