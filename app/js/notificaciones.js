@@ -1,7 +1,7 @@
 // ===== CONFIGURACIÓN DE EMAIL (EmailJS) =====
 var EMAILJS_PUBLIC_KEY = 'dHvymfFP3YNmhEzge';
 var EMAILJS_SERVICE_ID = 'service_xqnuxrp';
-var EMAILJS_TEMPLATE_ID = 'template-gbvg0ah';
+var EMAILJS_TEMPLATE_ID = 'template_gbvg0ah';
 
 async function enviarNotificacionCorreo(destinatario, asunto, mensaje) {
   try {
