@@ -639,7 +639,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/supabase.js"></script>
     <!-- Modal crear acta desde tesorería -->
@@ -671,7 +670,7 @@
             var sessionTelefono = '';
             var isReadOnly = false;
         (async function () {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseGetSession();
             if (!session) {
                 localStorage.removeItem('jac_session');
                 window.location.href = 'index.html';
@@ -823,16 +822,6 @@
             }
         });
 
-        // ===== RECUPERAR CONTRASEÑA (desde email) =====
-        supabase.auth.onAuthStateChange(function (event, session) {
-            if (event === 'PASSWORD_RECOVERY') {
-                document.getElementById('modalPassword').style.display = 'flex';
-                document.getElementById('modalMsg').textContent = 'Ingresá tu nueva contraseña';
-                document.getElementById('modalMsg').className = 'msg';
-                document.getElementById('modalMsg').style.display = 'block';
-            }
-        });
-
         // ===== SOPORTE =====
         document.getElementById('formSoporte').addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -891,7 +880,10 @@
 
         // ===== LOGOUT =====
         document.getElementById('logoutBtn').addEventListener('click', async function () {
-            await supabase.auth.signOut();
+            const token = localStorage.getItem('sb-access-token');
+            if (token) await supabaseSignOut(token);
+            localStorage.removeItem('sb-access-token');
+            localStorage.removeItem('sb-refresh-token');
             localStorage.removeItem('jac_session');
             window.location.href = 'index.html';
         });
@@ -934,7 +926,8 @@
             btn.disabled = true;
             btn.textContent = 'Guardando...';
 
-            const { error } = await supabase.auth.updateUser({ password: newPass });
+            const token = localStorage.getItem('sb-access-token');
+            const { error } = token ? await supabaseUpdatePassword(newPass, token) : { error: { message: 'No hay sesión activa' } };
 
             if (!error) {
                 msg.textContent = '✅ Contraseña cambiada exitosamente';

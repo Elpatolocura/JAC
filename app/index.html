@@ -138,7 +138,6 @@
         </form>
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/db.js"></script>
@@ -147,7 +146,7 @@
 
         // Verificar si ya hay sesión activa
         (async function () {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseGetSession();
             if (session) {
                 window.location.href = 'dashboard.html';
                 return;
@@ -174,7 +173,7 @@
             btn.disabled = true;
             btn.textContent = 'Ingresando...';
 
-            let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            let { data, error } = await supabaseSignIn(email, password);
 
             // Si falla, intentar migrar cuenta existente
             if (error) {
@@ -185,12 +184,9 @@
                     isExistingUser = registros && registros.length > 0 && (registros[0].password === password || registros[0].cedula === password);
                 }
                 if (isExistingUser) {
-                    const { error: signUpError } = await supabase.auth.signUp({
-                        email: email,
-                        password: password,
-                    });
+                    const { error: signUpError } = await supabaseSignUp(email, password);
                     if (!signUpError) {
-                        const retry = await supabase.auth.signInWithPassword({ email, password });
+                        const retry = await supabaseSignIn(email, password);
                         data = retry.data;
                         error = retry.error;
                     }
@@ -204,6 +200,12 @@
                 btn.disabled = false;
                 btn.textContent = 'Ingresar';
                 return;
+            }
+
+            // Guardar tokens
+            if (data.session) {
+                localStorage.setItem('sb-access-token', data.session.access_token);
+                localStorage.setItem('sb-refresh-token', data.session.refresh_token);
             }
 
             // Obtener perfil del usuario
@@ -248,9 +250,7 @@
             const btn = this.querySelector('button');
             btn.disabled = true;
             btn.textContent = 'Enviando...';
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: 'https://jac-coral.vercel.app/dashboard.html',
-            });
+            const { error } = await supabaseResetPassword(email);
             if (!error) {
                 msg.textContent = '✅ Revisá tu correo. Te enviamos las instrucciones para restablecer tu contraseña.';
                 msg.className = 'msg success';
@@ -452,10 +452,7 @@
             }
 
             // 4. Crear usuario en Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: campos.email,
-                password: campos.password,
-            });
+            const { data: authData, error: authError } = await supabaseSignUp(campos.email, campos.password);
 
             if (authError) {
                 msg.textContent = authError.message;
