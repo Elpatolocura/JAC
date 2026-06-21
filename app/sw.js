@@ -52,6 +52,11 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', function (event) {
   var url = event.request.url;
 
+  // Only cache GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   // API requests: network only (no cache)
   if (isApiRequest(url)) {
     return;
