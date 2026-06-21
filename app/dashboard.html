@@ -2282,12 +2282,17 @@
                 });
                 // Obtener emails de los usuarios invitados
                 var todosUsu = await getUsuarios();
-                var invitadosConEmail = invitados.map(function (inv) {
+                var invitadosConEmail = [];
+                invitados.forEach(function (inv) {
                     var u = (todosUsu || []).find(function (usr) { return usr.username === inv.username; });
-                    return { email: u ? u.email : '', nombre: inv.nombre, username: inv.username };
-                }).filter(function (inv) { return inv.email; });
+                    var email = u && u.email ? u.email : '';
+                    if (email) {
+                        invitadosConEmail.push({ email: email, nombre: inv.nombre, username: inv.username });
+                    }
+                });
 
                 if (invitadosConEmail.length > 0) {
+                    msg.textContent += ' Enviando ' + invitadosConEmail.length + ' notificación(es)...';
                     var res = await enviarInvitacionesReunion(
                         reuId ? reuId.id : null,
                         document.getElementById('reuTitulo').value,
@@ -2298,10 +2303,12 @@
                     );
                     var enviados = res.filter(function (r) { return r.ok; }).length;
                     var fallidos = res.filter(function (r) { return !r.ok; }).length;
-                    if (enviados > 0) {
-                        msg.textContent += ' (' + enviados + ' notificación' + (enviados !== 1 ? 'es' : '') + ' enviada' + (enviados !== 1 ? 's' : '') + ')';
+                    msg.textContent = '✅ Reunión creada. ' + enviados + ' notificación' + (enviados !== 1 ? 'es' : '') + ' enviada' + (enviados !== 1 ? 's' : '') + '.';
+                    if (fallidos > 0) {
+                        msg.textContent += ' ' + fallidos + ' fallida' + (fallidos !== 1 ? 's' : '') + '.';
+                        console.warn('Notificaciones fallidas:', res.filter(function (r) { return !r.ok; }));
                     }
-                    // Guardar log en notificaciones
+                    // Guardar log en notificaciones (no crítico si falla)
                     invitadosConEmail.forEach(function (inv) {
                         guardarNotificacion({
                             destinatario_email: inv.email,
@@ -2310,8 +2317,10 @@
                             tipo: 'invitacion',
                             reunion_id: reuId ? reuId.id : null,
                             enviado: true,
-                        }).catch(function () {});
+                        }).catch(function (e) { console.warn('Error guardando notificación:', e); });
                     });
+                } else {
+                    msg.textContent = '✅ Reunión creada. No se encontraron invitados con correo registrado.';
                 }
             } catch (e) {
                 console.warn('Error enviando notificaciones:', e);
