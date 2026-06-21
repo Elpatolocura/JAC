@@ -50,6 +50,23 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_role_check;
 ALTER TABLE usuarios ADD CONSTRAINT usuarios_role_check CHECK (role IN ('Presidente', 'Secretario', 'Tesorero', 'Vocal', 'Fiscal', 'Comité'));
 ALTER TABLE actas ADD COLUMN IF NOT EXISTS ciudad TEXT DEFAULT '';
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id BIGSERIAL PRIMARY KEY,
+  destinatario_email TEXT NOT NULL,
+  destinatario_nombre TEXT DEFAULT '',
+  asunto TEXT NOT NULL,
+  mensaje TEXT DEFAULT '',
+  tipo TEXT DEFAULT 'invitacion',
+  reunion_id BIGINT REFERENCES reuniones(id) ON DELETE SET NULL,
+  leido BOOLEAN DEFAULT false,
+  enviado BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_notificaciones ON notificaciones;
+CREATE POLICY anon_insert_notificaciones ON notificaciones FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_notificaciones ON notificaciones;
+CREATE POLICY anon_select_notificaciones ON notificaciones FOR SELECT USING (true);
 -- ^ el CHECK se actualiza si se agregan roles en el futuro
 
 -- RLS para usuarios (necesario para getUsuarios)
