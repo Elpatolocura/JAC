@@ -258,3 +258,23 @@ DROP POLICY IF EXISTS anon_select_asistencia ON asistencia_reuniones;
 CREATE POLICY anon_select_asistencia ON asistencia_reuniones FOR SELECT USING (true);
 DROP POLICY IF EXISTS anon_update_asistencia ON asistencia_reuniones;
 CREATE POLICY anon_update_asistencia ON asistencia_reuniones FOR UPDATE USING (true);
+
+-- ===== NOTIFICACIONES =====
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id BIGSERIAL PRIMARY KEY,
+  destinatario_email TEXT NOT NULL,
+  destinatario_nombre TEXT DEFAULT '',
+  asunto TEXT NOT NULL,
+  mensaje TEXT DEFAULT '',
+  tipo TEXT DEFAULT 'invitacion',
+  reunion_id BIGINT REFERENCES reuniones(id) ON DELETE SET NULL,
+  leido BOOLEAN DEFAULT false,
+  enviado BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS anon_insert_notificaciones ON notificaciones;
+CREATE POLICY anon_insert_notificaciones ON notificaciones FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS anon_select_notificaciones ON notificaciones;
+CREATE POLICY anon_select_notificaciones ON notificaciones FOR SELECT USING (true);

@@ -24,6 +24,7 @@
                 <button class="user-menu-btn" id="menuToggle" title="Menú">⚙️</button>
                 <div class="user-menu-dropdown" id="userDropdown">
                     <button id="btnInstalarApp">📲 Instalar app</button>
+                    <button id="btnEmailConfig">📧 Configurar correo</button>
                     <button id="btnCambiarPassTop">🔑 Cambiar contraseña</button>
                     <button id="btnPoliticas">🛡️ Política de seguridad</button>
                     <button id="btnSoporte">💬 Soporte</button>
@@ -599,6 +600,40 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="js/supabase.js"></script>
+    <!-- Modal configurar correo (EmailJS) -->
+    <div id="modalEmailConfig" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;max-height:90vh;overflow-y:auto;">
+        <button onclick="document.getElementById('modalEmailConfig').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div style="font-size:2rem;text-align:center;margin-bottom:4px;">📧</div>
+        <h3 style="text-align:center;margin-bottom:4px;">Configurar correo</h3>
+        <p style="text-align:center;font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">Necesitás una cuenta gratis en <a href="https://www.emailjs.com" target="_blank" style="color:var(--blue);">EmailJS</a> para enviar notificaciones.</p>
+        <form id="formEmailConfig">
+          <div class="form-group">
+            <label>Public Key (User ID)</label>
+            <input type="text" id="emailPublicKey" placeholder="Ej: abc123def456" required>
+          </div>
+          <div class="form-group">
+            <label>Service ID</label>
+            <input type="text" id="emailServiceId" placeholder="Ej: service_abc123" required>
+          </div>
+          <div class="form-group">
+            <label>Template ID</label>
+            <input type="text" id="emailTemplateId" placeholder="Ej: template_abc123" required>
+          </div>
+          <div class="form-group">
+            <label>Correo de respuesta (opcional)</label>
+            <input type="email" id="emailReplyTo" placeholder="tu@correo.com">
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;background:#f3f4f6;padding:12px;border-radius:8px;">
+            <strong>📝 Tu template de EmailJS debe tener estos parámetros:</strong><br>
+            <code style="font-size:0.75rem;">{{to_email}}, {{to_name}}, {{subject}}, {{message}}</code>
+          </div>
+          <button type="submit" class="btn-primary">💾 Guardar configuración</button>
+          <div class="msg" id="emailConfigMsg"></div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal crear acta desde tesorería -->
     <div id="modalActaTeso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
       <div style="background:white;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp 0.3s ease;position:relative;text-align:center;">
@@ -613,6 +648,7 @@
       </div>
     </div>
 
+    <script src="js/notificaciones.js"></script>
     <script src="js/db.js"></script>
     <script>
         // ===== SESSION =====
@@ -783,6 +819,41 @@
         document.getElementById('btnSoporte').addEventListener('click', function () {
             document.getElementById('userDropdown').classList.remove('show');
             document.getElementById('modalSoporte').style.display = 'flex';
+        });
+        document.getElementById('btnEmailConfig').addEventListener('click', function () {
+            document.getElementById('userDropdown').classList.remove('show');
+            var cfg = getEmailJSConfig();
+            if (cfg.publicKey) document.getElementById('emailPublicKey').value = cfg.publicKey;
+            if (cfg.serviceId) document.getElementById('emailServiceId').value = cfg.serviceId;
+            if (cfg.templateId) document.getElementById('emailTemplateId').value = cfg.templateId;
+            if (cfg.replyTo) document.getElementById('emailReplyTo').value = cfg.replyTo;
+            document.getElementById('modalEmailConfig').style.display = 'flex';
+        });
+        document.getElementById('formEmailConfig').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('emailConfigMsg');
+            msg.className = 'msg';
+            msg.style.display = 'none';
+            var cfg = {
+                publicKey: document.getElementById('emailPublicKey').value.trim(),
+                serviceId: document.getElementById('emailServiceId').value.trim(),
+                templateId: document.getElementById('emailTemplateId').value.trim(),
+                replyTo: document.getElementById('emailReplyTo').value.trim(),
+            };
+            if (!cfg.publicKey || !cfg.serviceId || !cfg.templateId) {
+                msg.textContent = 'Completá todos los campos obligatorios';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+            saveEmailJSConfig(cfg);
+            msg.textContent = '✅ Configuración guardada. Las notificaciones se enviarán al crear reuniones.';
+            msg.className = 'msg success';
+            msg.style.display = 'block';
+            setTimeout(function () {
+                document.getElementById('modalEmailConfig').style.display = 'none';
+                msg.style.display = 'none';
+            }, 2000);
         });
 
         // ===== LOGOUT =====
@@ -2269,6 +2340,51 @@
             msg.className = 'msg success';
             msg.style.display = 'block';
             this.reset();
+
+            // Enviar notificaciones por correo a los invitados
+            try {
+                var checks = document.querySelectorAll('.reu-invitar-chk:checked');
+                var invitados = [];
+                checks.forEach(function (chk) {
+                    invitados.push({ username: chk.value, nombre: chk.dataset.nombre });
+                });
+                // Obtener emails de los usuarios invitados
+                var todosUsu = await getUsuarios();
+                var invitadosConEmail = invitados.map(function (inv) {
+                    var u = (todosUsu || []).find(function (usr) { return usr.username === inv.username; });
+                    return { email: u ? u.email : '', nombre: inv.nombre, username: inv.username };
+                }).filter(function (inv) { return inv.email; });
+
+                if (invitadosConEmail.length > 0) {
+                    var res = await enviarInvitacionesReunion(
+                        reuId ? reuId.id : null,
+                        document.getElementById('reuTitulo').value,
+                        document.getElementById('reuFecha').value,
+                        document.getElementById('reuHora').value,
+                        sessionBarrio,
+                        invitadosConEmail
+                    );
+                    var enviados = res.filter(function (r) { return r.ok; }).length;
+                    var fallidos = res.filter(function (r) { return !r.ok; }).length;
+                    if (enviados > 0) {
+                        msg.textContent += ' (' + enviados + ' notificación' + (enviados !== 1 ? 'es' : '') + ' enviada' + (enviados !== 1 ? 's' : '') + ')';
+                    }
+                    // Guardar log en notificaciones
+                    invitadosConEmail.forEach(function (inv) {
+                        guardarNotificacion({
+                            destinatario_email: inv.email,
+                            destinatario_nombre: inv.nombre,
+                            asunto: 'Invitación a reunión - ' + document.getElementById('reuTitulo').value,
+                            tipo: 'invitacion',
+                            reunion_id: reuId ? reuId.id : null,
+                            enviado: true,
+                        }).catch(function () {});
+                    });
+                }
+            } catch (e) {
+                console.warn('Error enviando notificaciones:', e);
+            }
+
             btn.disabled = false;
             btn.textContent = '📅 Crear Reunión';
             renderReuniones().catch(function () {});
