@@ -788,8 +788,9 @@
         });
         document.getElementById('btnTestEmail').addEventListener('click', async function () {
             document.getElementById('userDropdown').classList.remove('show');
-            var email = prompt('Correo de prueba:');
-            if (!email) return;
+            var email = prompt('Correo de prueba (ej: tu@correo.com):');
+            if (!email || !email.trim()) { alert('Correo inválido'); return; }
+            email = email.trim();
             var r = await enviarNotificacionCorreo(
                 { email: email, nombre: 'Test JAC' },
                 'Prueba desde JAC',

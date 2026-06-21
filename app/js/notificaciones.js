@@ -4,6 +4,9 @@ var EMAILJS_SERVICE_ID = 'service_xqnuxrp';
 var EMAILJS_TEMPLATE_ID = 'template_gbvg0ah';
 
 async function enviarNotificacionCorreo(destinatario, asunto, mensaje) {
+  if (!destinatario || !destinatario.email) {
+    return { ok: false, error: 'Destinatario sin correo' };
+  }
   try {
     var res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
